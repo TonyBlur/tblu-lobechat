@@ -7,14 +7,24 @@ export enum LanguageModel {
    */
   GPT3_5 = 'gpt-3.5-turbo',
   GPT3_5_1106 = 'gpt-3.5-turbo-1106',
-  GPT3_5_16K = 'gpt-3.5-turbo-16k',
+  // GPT3_5_16K = 'gpt-3.5-turbo-16k',
   /**
    * GPT 4
    */
   GPT4 = 'gpt-4',
-  GPT4_32K = 'gpt-4-32k',
+  // GPT4_32K = 'gpt-4-32k',
   GPT4_PREVIEW = 'gpt-4-1106-preview',
   GPT4_VISION_PREVIEW = 'gpt-4-vision-preview',
+  /**
+   * Claude
+   */
+  CLAUDE2 = 'claude-2',
+  CLAUDE_INSTANT = 'claude-instant',
+  /**
+   * Llama
+   */
+  LLAMA_2_70B_CHAT = 'llama-2-70b-chat',
+  CODE_LLAMA_34B = 'code-llama-34b',
 }
 
 // 语言模型的设置参数
