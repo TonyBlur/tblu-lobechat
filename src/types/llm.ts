@@ -3,6 +3,12 @@
  */
 export enum LanguageModel {
   /**
+   * Claude
+   */
+  CLAUDE2 = 'claude-2',
+  CLAUDE_INSTANT = 'claude-instant',
+  CODE_LLAMA_34B = 'code-llama-34b',
+  /**
    * GPT 3.5 Turbo
    */
   GPT3_5 = 'gpt-3.5-turbo',
@@ -16,15 +22,9 @@ export enum LanguageModel {
   GPT4_PREVIEW = 'gpt-4-1106-preview',
   GPT4_VISION_PREVIEW = 'gpt-4-vision-preview',
   /**
-   * Claude
-   */
-  CLAUDE2 = 'claude-2',
-  CLAUDE_INSTANT = 'claude-instant',
-  /**
    * Llama
    */
   LLAMA_2_70B_CHAT = 'llama-2-70b-chat',
-  CODE_LLAMA_34B = 'code-llama-34b',
 }
 
 // 语言模型的设置参数
