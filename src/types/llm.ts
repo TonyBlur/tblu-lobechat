@@ -3,18 +3,10 @@
  */
 export enum LanguageModel {
   /**
-<<<<<<< HEAD
   * Claude
   */
   CLAUDE_INSTANT = 'claude-instant',
   CLAUDE2 = 'claude-2',
-=======
-   * Claude
-   */
-  CLAUDE2 = 'claude-2',
-  CLAUDE_INSTANT = 'claude-instant',
-  CODE_LLAMA_34B = 'code-llama-34b',
->>>>>>> e8323b9c8f8bbb365768b2ffa7a18806da09a65c
   /**
    * GPT 3.5 Turbo
    */
@@ -31,12 +23,8 @@ export enum LanguageModel {
   /**
    * Llama
    */
-<<<<<<< HEAD
   META_LLAMA_2_70B_CHAT = 'llama-2-70b-chat',
   META_CODE_LLAMA_34B = 'code-llama-34b',
-=======
-  LLAMA_2_70B_CHAT = 'llama-2-70b-chat',
->>>>>>> e8323b9c8f8bbb365768b2ffa7a18806da09a65c
 }
 
 // 语言模型的设置参数
