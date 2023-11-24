@@ -11,6 +11,6 @@ export const ModelTokens: Record<LanguageModel, number> = {
   [LanguageModel.GPT4_32K]: 32_768,
   [LanguageModel.CLAUDE2]: 100_000,
   [LanguageModel.CLAUDE_INSTANT]: 100_000,
-  [LanguageModel.LLAMA_2_70B_CHAT]: 4096,
-  [LanguageModel.CODE_LLAMA_34B]: 16_000,
+  [LanguageModel.META_LLAMA_2_70B_CHAT]: 4096,
+  [LanguageModel.META_CODE_LLAMA_34B]: 16_000,
 };
