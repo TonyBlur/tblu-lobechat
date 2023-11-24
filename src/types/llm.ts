@@ -5,8 +5,8 @@ export enum LanguageModel {
   /**
   * Claude
   */
-  CLAUDE_INSTANT = 'claude-instant',
   CLAUDE2 = 'claude-2',
+  CLAUDE_INSTANT = 'claude-instant',
   /**
    * GPT 3.5 Turbo
    */
@@ -23,8 +23,8 @@ export enum LanguageModel {
   /**
    * Llama
    */
-  META_LLAMA_2_70B_CHAT = 'llama-2-70b-chat',
   META_CODE_LLAMA_34B = 'code-llama-34b',
+  META_LLAMA_2_70B_CHAT = 'llama-2-70b-chat',
 }
 
 // 语言模型的设置参数
