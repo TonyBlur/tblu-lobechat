@@ -1,6 +1,6 @@
 {
   "background_color": "#000000",
-  "description": "An open-source, extensible (Function Calling), high-performance chatbot framework. It supports one-click free deployment of your private ChatGPT/LLM web application",
+  "description": "An open-source, extensible (Function Calling), high-performance chatbot framework. It supports one-click free deployment of your private ChatGPT/LLM web application.",
   "display": "standalone",
   "icons": [
     {
@@ -29,7 +29,7 @@
     }
   ],
   "id": "/",
-  "name": "LobeChat",
+  "name": "tbluChat - Your AI copilot",
   "orientation": "portrait",
   "scope": "/",
   "screenshots": [
@@ -54,8 +54,17 @@
       "type": "image/png"
     }
   ],
-  "short_name": "LobeChat",
+  "short_name": "tbluChat",
   "splash_pages": null,
   "start_url": ".",
-  "theme_color": "#000000"
+  "theme_color": "#000000",
+  "dir": "auto",
+  "display_override": [
+    "window-controls-overlay"
+  ],
+  "categories": [
+    "education",
+    "productivity",
+    "utilities"
+  ]
 }
