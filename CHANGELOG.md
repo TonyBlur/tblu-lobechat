@@ -2,6 +2,56 @@
 
 # Changelog
 
+### [Version 0.107.8](https://github.com/lobehub/lobe-chat/compare/v0.107.7...v0.107.8)
+
+<sup>Released on **2023-11-30**</sup>
+
+#### 💄 Styles
+
+- **misc**: Fix chatitem gap.
+
+<br/>
+
+<details>
+<summary><kbd>Improvements and Fixes</kbd></summary>
+
+#### Styles
+
+- **misc**: Fix chatitem gap ([772bb7c](https://github.com/lobehub/lobe-chat/commit/772bb7c))
+
+</details>
+
+<div align="right">
+
+[![](https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square)](#readme-top)
+
+</div>
+
+### [Version 0.107.7](https://github.com/lobehub/lobe-chat/compare/v0.107.6...v0.107.7)
+
+<sup>Released on **2023-11-30**</sup>
+
+#### 🐛 Bug Fixes
+
+- **misc**: Improve plugin message display.
+
+<br/>
+
+<details>
+<summary><kbd>Improvements and Fixes</kbd></summary>
+
+#### What's fixed
+
+- **misc**: Improve plugin message display ([208200a](https://github.com/lobehub/lobe-chat/commit/208200a))
+
+</details>
+
+<div align="right">
+
+[![](https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square)](#readme-top)
+
+</div>
+
 ### [Version 0.107.6](https://github.com/lobehub/lobe-chat/compare/v0.107.5...v0.107.6)
 
 <sup>Released on **2023-11-30**</sup>
