@@ -271,9 +271,9 @@ export const chatMessage: StateCreator<
           topicId: activeTopicId,
         };
         functionId = await messageService.create(functionMessage);
-        await refreshMessages();
       }
 
+      await refreshMessages();
       triggerFunctionCall(functionId);
     }
   },
@@ -287,7 +287,7 @@ export const chatMessage: StateCreator<
     set({ messages }, false, t(`dispatchMessage/${payload.type}`, payload));
   },
   fetchAIChatMessage: async (messages, assistantId) => {
-    const { dispatchMessage, toggleChatLoading, refreshMessages } = get();
+    const { toggleChatLoading, refreshMessages } = get();
 
     const abortController = toggleChatLoading(
       true,
@@ -360,12 +360,13 @@ export const chatMessage: StateCreator<
       onFinish: async (content) => {
         // update the content after fetch result
         await messageService.updateMessageContent(assistantId, content);
+        await refreshMessages();
       },
-      onMessageHandle: (text) => {
+      onMessageHandle: async (text) => {
         output += text;
-        // Note: Don't need change this to  `messageService.updateMessageContent`
-        // because we don't need to update the message content to the database in the middle of the process
-        dispatchMessage({ id: assistantId, key: 'content', type: 'updateMessage', value: output });
+
+        await messageService.updateMessageContent(assistantId, output);
+        await refreshMessages();
 
         // is this message is just a function call
         if (isFunctionMessageAtStart(output)) isFunctionCall = true;
