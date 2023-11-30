@@ -62,4 +62,4 @@ export interface LLMMessage {
   role: LLMRoleType;
 }
 
-export type LLMExample = LLMMessage[];
+export type FewShots = LLMMessage[];
