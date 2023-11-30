@@ -3,7 +3,7 @@ import { SelectProps } from 'antd';
 export const opeanaiTTSOptions: SelectProps['options'] = [
   {
     label: 'tts-1',
-    value: 'google-tts-1',
+    value: 'tts-1',
   },
   {
     label: 'tts-1-hd',
