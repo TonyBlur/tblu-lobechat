@@ -23,11 +23,11 @@ export const chainSummaryTitle = async (
       role: 'user',
     },
   ];
-  // 如果超过 4k，则使用 GPT3.5 16K 模型
+  // 如果超过 4k，则使用 GPT3.5 1106 模型
   const tokens = await chatHelpers.getMessagesTokenCount(finalMessages);
   let model: LanguageModel | undefined = undefined;
   if (tokens > 4000) {
-    model = LanguageModel.GPT3_5_16K;
+    model = LanguageModel.GPT3_5_1106;
   }
 
   return {
