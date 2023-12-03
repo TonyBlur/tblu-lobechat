@@ -18,7 +18,7 @@ export default memo<SettingsCommonProps>((props) => {
   return (
     <>
       <PageTitle title={t('tab.common')} />
-      <Common {...props} />
+      <Common {...props} {...props} />
       <Footer>tbluChat v{CURRENT_VERSION}</Footer>
     </>
   );
