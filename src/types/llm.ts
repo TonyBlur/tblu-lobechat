@@ -3,14 +3,9 @@
  */
 export enum LanguageModel {
   /**
-  * Claude
-  */
-  CLAUDE2 = 'claude-2',
-  CLAUDE_INSTANT = 'claude-instant',
-  /**
    * GPT 3.5 Turbo
    */
-  GPT3_5 = 'gpt-3.5-turbo',
+  GPT3_5 = 'gpt-3.5-turbo-1106',
   /**
    * GPT 4
    */
