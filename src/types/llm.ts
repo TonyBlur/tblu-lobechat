@@ -5,7 +5,8 @@ export enum LanguageModel {
   /**
    * GPT 3.5 Turbo
    */
-  GPT3_5 = 'gpt-3.5-turbo-1106',
+  GPT3_5 = 'gpt-3.5-turbo',
+  GPT3_5_1106 = 'gpt-3.5-turbo-1106',
   /**
    * GPT 4
    */
