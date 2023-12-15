@@ -3,6 +3,10 @@
  */
 export enum LanguageModel {
   /**
+   * Google
+   */
+  GOOGLE_GEMIMI_PRO = 'gemini-pro',
+  /**
    * GPT 3.5 Turbo
    */
   GPT3_5 = 'gpt-3.5-turbo',
@@ -19,6 +23,10 @@ export enum LanguageModel {
    */
   META_CODE_LLAMA_34B = 'code-llama-34b',
   META_LLAMA_2_70B_CHAT = 'llama-2-70b-chat',
+  /**
+   * Mistral
+   * */
+  MISTRAL_MIXTRAL_8x7B = 'mixtral-8x7b',
 }
 
 // 语言模型的设置参数
