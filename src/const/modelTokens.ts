@@ -2,7 +2,6 @@ import { LanguageModel } from '@/types/llm';
 
 // refs to: https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
 export const ModelTokens: Record<LanguageModel, number> = {
-  [LanguageModel.GOOGLE_GEMIMI_PRO]:32_768,
   [LanguageModel.GPT3_5]: 4096,
   [LanguageModel.GPT3_5_1106]: 16_385,
   [LanguageModel.GPT4]: 8196,

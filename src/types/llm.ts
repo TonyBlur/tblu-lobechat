@@ -3,10 +3,6 @@
  */
 export enum LanguageModel {
   /**
-   * Google
-   */
-  GOOGLE_GEMIMI_PRO = 'gemini-pro',
-  /**
    * GPT 3.5 Turbo
    */
   GPT3_5 = 'gpt-3.5-turbo',
