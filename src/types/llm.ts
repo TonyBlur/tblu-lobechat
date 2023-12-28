@@ -22,7 +22,7 @@ export enum LanguageModel {
   /**
    * Mistral
    * */
-  MISTRAL_MIXTRAL_8x7B = 'mixtral-8x7b',
+  MISTRAL_MIXTRAL_8X7B = 'mixtral-8x7b',
 }
 
 // 语言模型的设置参数
