@@ -2,6 +2,81 @@
 
 # Changelog
 
+### [Version 0.122.6](https://github.com/lobehub/lobe-chat/compare/v0.122.5...v0.122.6)
+
+<sup>Released on **2024-01-31**</sup>
+
+#### 🐛 Bug Fixes
+
+- **check**: The state of connectivity can only be singular.
+
+<br/>
+
+<details>
+<summary><kbd>Improvements and Fixes</kbd></summary>
+
+#### What's fixed
+
+- **check**: The state of connectivity can only be singular, closes [#1201](https://github.com/lobehub/lobe-chat/issues/1201) ([c412baf](https://github.com/lobehub/lobe-chat/commit/c412baf))
+
+</details>
+
+<div align="right">
+
+[![](https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square)](#readme-top)
+
+</div>
+
+### [Version 0.122.5](https://github.com/lobehub/lobe-chat/compare/v0.122.4...v0.122.5)
+
+<sup>Released on **2024-01-31**</sup>
+
+#### 🐛 Bug Fixes
+
+- **misc**: The plugin has a hallucination and gets stuck.
+
+<br/>
+
+<details>
+<summary><kbd>Improvements and Fixes</kbd></summary>
+
+#### What's fixed
+
+- **misc**: The plugin has a hallucination and gets stuck, closes [#1191](https://github.com/lobehub/lobe-chat/issues/1191) ([0189759](https://github.com/lobehub/lobe-chat/commit/0189759))
+
+</details>
+
+<div align="right">
+
+[![](https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square)](#readme-top)
+
+</div>
+
+### [Version 0.122.4](https://github.com/lobehub/lobe-chat/compare/v0.122.3...v0.122.4)
+
+<sup>Released on **2024-01-30**</sup>
+
+#### 🐛 Bug Fixes
+
+- **misc**: Fix plugin gateway auth.
+
+<br/>
+
+<details>
+<summary><kbd>Improvements and Fixes</kbd></summary>
+
+#### What's fixed
+
+- **misc**: Fix plugin gateway auth, closes [#1195](https://github.com/lobehub/lobe-chat/issues/1195) ([2184167](https://github.com/lobehub/lobe-chat/commit/2184167))
+
+</details>
+
+<div align="right">
+
+[![](https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square)](#readme-top)
+
+</div>
+
 ### [Version 0.122.3](https://github.com/lobehub/lobe-chat/compare/v0.122.2...v0.122.3)
 
 <sup>Released on **2024-01-30**</sup>
