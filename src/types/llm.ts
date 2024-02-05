@@ -3,11 +3,6 @@
  */
 export enum LanguageModel {
   /**
-   * Google Gemini
-   */
-  GEMINI_PRO = 'gemini-pro',
-  GEMINI_PRO_VISION = 'gemini-pro-vision',
-  /**
    * GPT 3.5 Turbo
    */
   GPT3_5 = 'gpt-3.5-turbo',
@@ -21,14 +16,6 @@ export enum LanguageModel {
   GPT4_TURBO_0125 = 'gpt-4-0125-preview',
   GPT4_TURBO_1106 = 'gpt-4-1106-preview',
   GPT4_VISION_PREVIEW = 'gpt-4-vision-preview',
-  /**
-   * Llama
-   */
-  META_LLAMA_2_70B_CHAT = 'llama-2-70b-chat',
-  /**
-   * Mistral
-   * */
-  MISTRAL_MIXTRAL_8X7B = 'mixtral-8x7b',
 }
 
 export interface ChatModelCard {
