@@ -3,23 +3,27 @@
  */
 export enum LanguageModel {
   /**
+   * Google Gemini
+   */
+  GEMINI_PRO = 'gemini-pro',
+  GEMINI_PRO_VISION = 'gemini-pro-vision',
+  /**
    * GPT 3.5 Turbo
    */
   GPT3_5 = 'gpt-3.5-turbo',
-  GPT3_5_1106 = 'gpt-3.5-turbo-1106',
   GPT3_5_0125 = 'gpt-3.5-turbo-0125',
+  GPT3_5_1106 = 'gpt-3.5-turbo-1106',
   /**
    * GPT 4
    */
   GPT4 = 'gpt-4',
   GPT4_32K = 'gpt-4-32k',
-  GPT4_TURBO_1106 = 'gpt-4-1106-preview',
   GPT4_TURBO_0125 = 'gpt-4-0125-preview',
+  GPT4_TURBO_1106 = 'gpt-4-1106-preview',
   GPT4_VISION_PREVIEW = 'gpt-4-vision-preview',
   /**
    * Llama
    */
-  META_CODE_LLAMA_34B = 'code-llama-34b',
   META_LLAMA_2_70B_CHAT = 'llama-2-70b-chat',
   /**
    * Mistral
