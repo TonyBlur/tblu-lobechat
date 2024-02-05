@@ -7,13 +7,14 @@ export enum LanguageModel {
    */
   GPT3_5 = 'gpt-3.5-turbo',
   GPT3_5_1106 = 'gpt-3.5-turbo-1106',
+  GPT3_5_0125 = 'gpt-3.5-turbo-0125',
   /**
    * GPT 4
    */
   GPT4 = 'gpt-4',
   GPT4_32K = 'gpt-4-32k',
-  GPT4_TURBO = 'gpt-4-1106-preview',
-  GPT4_TURBO_PREVIEW = 'gpt-4-0125-preview',
+  GPT4_TURBO_1106 = 'gpt-4-1106-preview',
+  GPT4_TURBO_0125 = 'gpt-4-0125-preview',
   GPT4_VISION_PREVIEW = 'gpt-4-vision-preview',
   /**
    * Llama
