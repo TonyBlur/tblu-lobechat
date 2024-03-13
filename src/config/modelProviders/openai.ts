@@ -18,6 +18,7 @@ const OpenAI: ModelProviderCard = {
       tokens: 16_385,
     },
     {
+      displayName: 'GPT-3.5 Turbo Instruct',
       hidden: true,
       id: 'gpt-3.5-turbo-instruct',
       tokens: 4096,
@@ -29,12 +30,14 @@ const OpenAI: ModelProviderCard = {
       tokens: 16_385,
     },
     {
+      displayName: 'GPT-3.5 Turbo (0613)',
       hidden: true,
       id: 'gpt-3.5-turbo-0613',
       legacy: true,
       tokens: 4096,
     },
     {
+      displayName: 'GPT-3.5 Turbo 16K (0613)',
       hidden: true,
       id: 'gpt-3.5-turbo-16k-0613',
       legacy: true,
@@ -68,24 +71,28 @@ const OpenAI: ModelProviderCard = {
       tokens: 8192,
     },
     {
+      displayName: 'GPT-4 (0613)',
       functionCall: true,
       hidden: true,
       id: 'gpt-4-0613',
       tokens: 8192,
     },
     {
+      displayName: 'GPT-4 32K',
       functionCall: true,
       hidden: true,
       id: 'gpt-4-32k',
       tokens: 32_768,
     },
     {
+      displayName: 'GPT-4 32K (0613)',
       functionCall: true,
       hidden: true,
       id: 'gpt-4-32k-0613',
       tokens: 32_768,
     },
     {
+      displayName: 'GPT-4 ALL',
       files: true,
       functionCall: true,
       hidden: true,
