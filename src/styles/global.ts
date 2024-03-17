@@ -21,7 +21,7 @@ export default ({ prefixCls }: { prefixCls: string }) => css`
     margin-bottom: 0;
   }
 
-  @media (max-width: 575px) {
+  @media (max-width: 768px) {
     * {
       ::-webkit-scrollbar {
         display: none;
