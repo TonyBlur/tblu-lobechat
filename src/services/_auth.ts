@@ -57,9 +57,17 @@ export const getProviderAuthPayload = (provider: string) => {
       const endpoint = modelProviderSelectors.anthropicProxyUrl(useGlobalStore.getState());
       return { apiKey, endpoint };
     }
-    
+
     case ModelProvider.Mistral: {
       return { apiKey: modelProviderSelectors.mistralAPIKey(useGlobalStore.getState()) };
+    }
+
+    case ModelProvider.Groq: {
+      return { apiKey: modelProviderSelectors.groqAPIKey(useGlobalStore.getState()) };
+    }
+    
+    case ModelProvider.OpenRouter: {
+      return { apiKey: modelProviderSelectors.openrouterAPIKey(useGlobalStore.getState()) };
     }
 
     default:

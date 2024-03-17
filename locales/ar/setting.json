@@ -99,6 +99,14 @@
         "title": "مفتاح واجهة برمجة التطبيقات"
       }
     },
+    "Groq": {
+      "title": "Groq",
+      "token": {
+        "desc": "أدخل مفتاح API الخاص بـ Groq",
+        "placeholder": "مفتاح API Groq",
+        "title": "مفتاح API"
+      }
+    },
     "Mistral": {
       "title": "Mistral AI",
       "token": {
@@ -169,6 +177,22 @@
         "title": "استخدام Azure OpenAI"
       }
     },
+    "OpenRouter": {
+      "checker": {
+        "desc": "اختبار صحة عنوان الوكيل"
+      },
+      "customModelName": {
+        "desc": "إضافة نموذج مخصص، استخدم فاصلة (،) للنماذج المتعددة",
+        "placeholder": "mistralai/mistral-7b-instruct:free,openchat/openchat-7b:free",
+        "title": "اسم النموذج المخصص"
+      },
+      "title": "OpenRouter",
+      "token": {
+        "desc": "أدخل مفتاح API من OpenRouter AI",
+        "placeholder": "مفتاح API من OpenRouter AI",
+        "title": "مفتاح API"
+      }
+    },
     "Perplexity": {
       "title": "Perplexity AI",
       "token": {
@@ -192,6 +216,14 @@
       "title": "فحص الاتصال"
     },
     "waitingForMore": "يتم <1>التخطيط لتوفير</1> المزيد من النماذج، ترقبوا المزيد ✨"
+  },
+  "ollama": {
+    "download": {
+      "desc": "جارٍ تنزيل النموذج، يرجى عدم إغلاق هذه الصفحة. سيتم استئناف التنزيل من حيث توقف في حالة إعادة التنزيل",
+      "remainingTime": "الوقت المتبقي",
+      "speed": "سرعة التنزيل",
+      "title": "جارٍ تنزيل النموذج {{model}}"
+    }
   },
   "plugin": {
     "addTooltip": "إضافة البرنامج المساعد",

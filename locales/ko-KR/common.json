@@ -104,11 +104,13 @@
     "azure": "Azure",
     "bedrock": "AWS Bedrock",
     "google": "Google",
+    "groq": "Groq",
     "mistral": "Mistral AI",
     "moonshot": "문샷 AI",
     "ollama": "올라마",
     "oneapi": "One API",
     "openai": "OpenAI",
+    "openrouter": "오픈 라우터",
     "perplexity": "Perplexity",
     "zhipu": "지푸 AI"
   },

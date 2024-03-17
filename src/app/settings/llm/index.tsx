@@ -11,10 +11,12 @@ import Footer from '../features/Footer';
 import Anthropic from './Anthropic';
 import Bedrock from './Bedrock';
 import Google from './Google';
+import Groq from './Groq';
 import Mistral from './Mistral';
 import Moonshot from './Moonshot';
 import Ollama from './Ollama';
 import OpenAI from './OpenAI';
+import OpenRouter from './OpenRouter';
 import Perplexity from './Perplexity';
 import Zhipu from './Zhipu';
 
@@ -29,9 +31,11 @@ export default memo<{ showOllama: boolean }>(({ showOllama }) => {
       {showOllama && <Ollama />}
       <Anthropic />
       <Google />
+      <Groq />
       <Bedrock />
       <Perplexity />
       <Mistral />
+      <OpenRouter />
       <Moonshot />
       <Zhipu />
       <Footer>

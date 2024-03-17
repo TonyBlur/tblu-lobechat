@@ -34,6 +34,12 @@ export const AgentRuntimeErrorType = {
 
   InvalidAnthropicAPIKey: 'InvalidAnthropicAPIKey',
   AnthropicBizError: 'AnthropicBizError',
+
+  InvalidGroqAPIKey: 'InvalidGroqAPIKey',
+  GroqBizError: 'GroqBizError',
+  
+  InvalidOpenRouterAPIKey: 'InvalidOpenRouterAPIKey',
+  OpenRouterBizError: 'OpenRouterBizError',
 } as const;
 
 export type ILobeAgentRuntimeErrorType =

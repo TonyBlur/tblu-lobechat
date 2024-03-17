@@ -9,9 +9,11 @@ import { useChatStore } from '@/store/chat';
 import AnthropicForm from './Anthropic';
 import BedrockForm from './Bedrock';
 import GoogleForm from './Google';
+import GroqForm from './Groq';
 import MistralForm from './Mistral';
 import MoonshotForm from './Moonshot';
 import OpenAIForm from './OpenAI';
+import OpenRouterForm from './OpenRouter';
 import PerplexityForm from './Perplexity';
 import ZhipuForm from './Zhipu';
 
@@ -53,6 +55,14 @@ const APIKeyForm = memo<APIKeyFormProps>(({ id, provider }) => {
 
       case ModelProvider.Anthropic: {
         return <AnthropicForm />;
+      }
+
+      case ModelProvider.Groq: {
+        return <GroqForm />;
+      }
+      
+      case ModelProvider.OpenRouter: {
+        return <OpenRouterForm />;
       }
 
       default:

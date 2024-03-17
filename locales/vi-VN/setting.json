@@ -99,6 +99,14 @@
         "title": "API Key"
       }
     },
+    "Groq": {
+      "title": "Groq",
+      "token": {
+        "desc": "Nhập API Key từ Groq",
+        "placeholder": "Groq API Key",
+        "title": "API Key"
+      }
+    },
     "Mistral": {
       "title": "Mistral AI",
       "token": {
@@ -169,6 +177,22 @@
         "title": "Sử dụng Azure OpenAI"
       }
     },
+    "OpenRouter": {
+      "checker": {
+        "desc": "Kiểm tra xem địa chỉ proxy đã được điền đúng chưa"
+      },
+      "customModelName": {
+        "desc": "Thêm tên mô hình tùy chỉnh, nhiều mô hình sử dụng dấu phẩy (,) để ngăn cách",
+        "placeholder": "mistralai/mistral-7b-instruct:free,openchat/openchat-7b:free",
+        "title": "Tên mô hình tùy chỉnh"
+      },
+      "title": "OpenRouter",
+      "token": {
+        "desc": "Nhập API Key từ OpenRouter AI",
+        "placeholder": "OpenRouter AI API Key",
+        "title": "API Key"
+      }
+    },
     "Perplexity": {
       "title": "Perplexity AI",
       "token": {
@@ -192,6 +216,14 @@
       "title": "Kiểm tra kết nối"
     },
     "waitingForMore": "Có thêm mô hình đang <1>được lên kế hoạch tích hợp</1>, hãy chờ đợi ✨"
+  },
+  "ollama": {
+    "download": {
+      "desc": "Ollama đang tải xuống mô hình này, vui lòng không đóng trang này. Quá trình tải xuống sẽ tiếp tục từ nơi đã bị gián đoạn khi tải lại",
+      "remainingTime": "Thời gian còn lại",
+      "speed": "Tốc độ tải xuống",
+      "title": "Đang tải xuống mô hình {{model}}"
+    }
   },
   "plugin": {
     "addTooltip": "Thêm tiện ích",

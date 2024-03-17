@@ -10,18 +10,21 @@ export const runtime = 'edge';
  */
 export const GET = async () => {
   const {
+    ENABLE_LANGFUSE,
     CUSTOM_MODELS,
     ENABLED_MOONSHOT,
     ENABLED_ZHIPU,
     ENABLED_AWS_BEDROCK,
     ENABLED_GOOGLE,
+    ENABLED_GROQ,
     ENABLE_OAUTH_SSO,
     ENABLE_OLLAMA,
     ENABLED_PERPLEXITY,
     ENABLED_ANTHROPIC,
     ENABLED_MISTRAL,
+    ENABLED_OPENROUTER,
     DEFAULT_AGENT_CONFIG,
-    ENABLE_LANGFUSE,
+    OLLAMA_CUSTOM_MODELS,
   } = getServerConfig();
 
   const config: GlobalServerConfig = {
@@ -35,9 +38,11 @@ export const GET = async () => {
       anthropic: { enabled: ENABLED_ANTHROPIC },
       bedrock: { enabled: ENABLED_AWS_BEDROCK },
       google: { enabled: ENABLED_GOOGLE },
+      groq: { enabled: ENABLED_GROQ },
       mistral: { enabled: ENABLED_MISTRAL },
       moonshot: { enabled: ENABLED_MOONSHOT },
-      ollama: { enabled: ENABLE_OLLAMA },
+      ollama: { customModelName: OLLAMA_CUSTOM_MODELS, enabled: ENABLE_OLLAMA },
+      openrouter: { enabled: ENABLED_OPENROUTER },
       perplexity: { enabled: ENABLED_PERPLEXITY },
       zhipu: { enabled: ENABLED_ZHIPU },
     },

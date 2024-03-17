@@ -99,6 +99,14 @@
         "title": "APIキー"
       }
     },
+    "Groq": {
+      "title": "Groq",
+      "token": {
+        "desc": "Groq からの API キーを入力してください",
+        "placeholder": "Groq API キー",
+        "title": " API キー"
+      }
+    },
     "Mistral": {
       "title": "Mistral AI",
       "token": {
@@ -169,6 +177,22 @@
         "title": "Azure OpenAI を使用"
       }
     },
+    "OpenRouter": {
+      "checker": {
+        "desc": "プロキシアドレスが正しく入力されているかをテストします"
+      },
+      "customModelName": {
+        "desc": "カスタムモデルを追加します。複数のモデルはコンマ（,）で区切ってください",
+        "placeholder": "mistralai/mistral-7b-instruct:free,openchat/openchat-7b:free",
+        "title": "カスタムモデル名"
+      },
+      "title": "OpenRouter",
+      "token": {
+        "desc": "OpenRouter AIから取得したAPIキーを入力してください",
+        "placeholder": "OpenRouter AI APIキー",
+        "title": "APIキー"
+      }
+    },
     "Perplexity": {
       "title": "Perplexity",
       "token": {
@@ -192,6 +216,14 @@
       "title": "接続性チェック"
     },
     "waitingForMore": "さらに多くのモデルが <1>計画されています</1>。お楽しみに ✨"
+  },
+  "ollama": {
+    "download": {
+      "desc": "Ollama はモデルをダウンロード中です。ページを閉じないようにしてください。再度ダウンロードすると、中断した箇所から再開されます。",
+      "remainingTime": "残り時間",
+      "speed": "ダウンロード速度",
+      "title": "モデル {{model}} をダウンロード中"
+    }
   },
   "plugin": {
     "addTooltip": "カスタムプラグイン",
