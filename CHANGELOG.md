@@ -2,6 +2,123 @@
 
 # Changelog
 
+### [Version 1.12.14](https://github.com/lobehub/lobe-chat/compare/v1.12.13...v1.12.14)
+
+<sup>Released on **2024-08-24**</sup>
+
+#### 🐛 Bug Fixes
+
+- **misc**: Fix tts file saving in server mode.
+
+<br/>
+
+<details>
+<summary><kbd>Improvements and Fixes</kbd></summary>
+
+#### What's fixed
+
+- **misc**: Fix tts file saving in server mode, closes [#3585](https://github.com/lobehub/lobe-chat/issues/3585) ([ab1cb47](https://github.com/lobehub/lobe-chat/commit/ab1cb47))
+
+</details>
+
+<div align="right">
+
+[![](https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square)](#readme-top)
+
+</div>
+
+### [Version 1.12.13](https://github.com/lobehub/lobe-chat/compare/v1.12.12...v1.12.13)
+
+<sup>Released on **2024-08-24**</sup>
+
+#### 💄 Styles
+
+- **misc**: Update 01.AI models.
+
+<br/>
+
+<details>
+<summary><kbd>Improvements and Fixes</kbd></summary>
+
+#### Styles
+
+- **misc**: Update 01.AI models, closes [#3586](https://github.com/lobehub/lobe-chat/issues/3586) ([c4a7f70](https://github.com/lobehub/lobe-chat/commit/c4a7f70))
+
+</details>
+
+<div align="right">
+
+[![](https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square)](#readme-top)
+
+</div>
+
+### [Version 1.12.12](https://github.com/lobehub/lobe-chat/compare/v1.12.11...v1.12.12)
+
+<sup>Released on **2024-08-24**</sup>
+
+<br/>
+
+<details>
+<summary><kbd>Improvements and Fixes</kbd></summary>
+
+</details>
+
+<div align="right">
+
+[![](https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square)](#readme-top)
+
+</div>
+
+### [Version 1.12.11](https://github.com/lobehub/lobe-chat/compare/v1.12.10...v1.12.11)
+
+<sup>Released on **2024-08-23**</sup>
+
+#### 🐛 Bug Fixes
+
+- **misc**: Remove orphan chunks if there is no related file.
+
+<br/>
+
+<details>
+<summary><kbd>Improvements and Fixes</kbd></summary>
+
+#### What's fixed
+
+- **misc**: Remove orphan chunks if there is no related file, closes [#3578](https://github.com/lobehub/lobe-chat/issues/3578) ([36bcaf3](https://github.com/lobehub/lobe-chat/commit/36bcaf3))
+
+</details>
+
+<div align="right">
+
+[![](https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square)](#readme-top)
+
+</div>
+
+### [Version 1.12.10](https://github.com/lobehub/lobe-chat/compare/v1.12.9...v1.12.10)
+
+<sup>Released on **2024-08-23**</sup>
+
+#### 🐛 Bug Fixes
+
+- **misc**: Refactor and fix dalle.
+
+<br/>
+
+<details>
+<summary><kbd>Improvements and Fixes</kbd></summary>
+
+#### What's fixed
+
+- **misc**: Refactor and fix dalle, closes [#3572](https://github.com/lobehub/lobe-chat/issues/3572) ([8b39b61](https://github.com/lobehub/lobe-chat/commit/8b39b61))
+
+</details>
+
+<div align="right">
+
+[![](https://img.shields.io/badge/-BACK_TO_TOP-151515?style=flat-square)](#readme-top)
+
+</div>
+
 ### [Version 1.12.9](https://github.com/lobehub/lobe-chat/compare/v1.12.8...v1.12.9)
 
 <sup>Released on **2024-08-23**</sup>
