@@ -33,7 +33,7 @@ const manifest = async (): Promise<MetadataRoute.Manifest | any> => {
       },
     ],
     id: kebabCase(BRANDING_NAME),
-    name: BRANDING_NAME,
+    name: `tblu ${BRANDING_NAME}`,
     screenshots: BRANDING_LOGO_URL
       ? []
       : [
