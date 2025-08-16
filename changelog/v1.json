@@ -1,6 +1,86 @@
 [
   {
     "children": {
+      "improvements": ["Refactor prompts folder to the @lobechat/prompts pacakge."]
+    },
+    "date": "2025-08-16",
+    "version": "1.112.4"
+  },
+  {
+    "children": {
+      "improvements": ["Refactor const folder to a new package."]
+    },
+    "date": "2025-08-16",
+    "version": "1.112.3"
+  },
+  {
+    "children": {
+      "improvements": ["重构 ArgsInput 组件."]
+    },
+    "date": "2025-08-16",
+    "version": "1.112.2"
+  },
+  {
+    "children": {
+      "improvements": ["Add Imagen 4 GA models, style improve auth sign in box loading."]
+    },
+    "date": "2025-08-16",
+    "version": "1.112.1"
+  },
+  {
+    "children": {},
+    "date": "2025-08-15",
+    "version": "1.112.0"
+  },
+  {
+    "children": {},
+    "date": "2025-08-14",
+    "version": "1.111.12"
+  },
+  {
+    "children": {
+      "improvements": ["Update Mistral AI models & Optimize many model providers fetching."]
+    },
+    "date": "2025-08-13",
+    "version": "1.111.11"
+  },
+  {
+    "children": {
+      "improvements": ["Adjust near bottom size on thinking scroll."]
+    },
+    "date": "2025-08-12",
+    "version": "1.111.10"
+  },
+  {
+    "children": {
+      "improvements": ["Improve Gemini error display with promptFeedback."]
+    },
+    "date": "2025-08-12",
+    "version": "1.111.9"
+  },
+  {
+    "children": {
+      "improvements": ["Support new GPT-5 Verbosity params."]
+    },
+    "date": "2025-08-11",
+    "version": "1.111.8"
+  },
+  {
+    "children": {
+      "improvements": ["Refactor model-runtime to a seperated package."]
+    },
+    "date": "2025-08-11",
+    "version": "1.111.7"
+  },
+  {
+    "children": {
+      "fixes": ["Solve the cache problem caused by the same dom id when sharing pictures."]
+    },
+    "date": "2025-08-11",
+    "version": "1.111.6"
+  },
+  {
+    "children": {
       "improvements": ["Add mask effect to thinking scroll, update i18n."]
     },
     "date": "2025-08-10",
