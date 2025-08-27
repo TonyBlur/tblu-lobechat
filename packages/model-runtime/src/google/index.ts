@@ -9,9 +9,7 @@ import {
   Type as SchemaType,
   ThinkingConfig,
 } from '@google/genai';
-
-import { imageUrlToBase64 } from '@/utils/imageToBase64';
-import { safeParseJSON } from '@/utils/safeParseJSON';
+import { imageUrlToBase64, safeParseJSON } from '@lobechat/utils';
 
 import { LobeRuntimeAI } from '../BaseAI';
 import { AgentRuntimeErrorType } from '../error';
@@ -36,12 +34,14 @@ const modelsWithModalities = new Set([
   'gemini-2.0-flash-exp',
   'gemini-2.0-flash-exp-image-generation',
   'gemini-2.0-flash-preview-image-generation',
+  'gemini-2.5-flash-image-preview',
 ]);
 
 const modelsDisableInstuction = new Set([
   'gemini-2.0-flash-exp',
   'gemini-2.0-flash-exp-image-generation',
   'gemini-2.0-flash-preview-image-generation',
+  'gemini-2.5-flash-image-preview',
   'gemma-3-1b-it',
   'gemma-3-4b-it',
   'gemma-3-12b-it',
@@ -213,6 +213,7 @@ export class LobeGoogleAI implements LobeRuntimeAI {
       };
 
       const inputStartAt = Date.now();
+
       const geminiStreamResponse = await this.client.models.generateContentStream({
         config,
         contents,
