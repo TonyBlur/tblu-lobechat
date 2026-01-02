@@ -36,10 +36,10 @@ export const convertOpenAIMessages = async (messages: OpenAI.ChatCompletionMessa
           typeof message.content === 'string'
             ? message.content
             : await Promise.all(
-                (message.content || []).map((c) =>
-                  convertMessageContent(c as OpenAI.ChatCompletionContentPart),
-                ),
+              (message.content || []).map((c) =>
+                convertMessageContent(c as OpenAI.ChatCompletionContentPart),
               ),
+            ),
         role: msg.role,
       };
 
@@ -108,18 +108,18 @@ export const convertOpenAIResponseInputs = async (messages: OpenAIChatMessage[])
           typeof message.content === 'string'
             ? message.content
             : await Promise.all(
-                (message.content || []).map(async (c) => {
-                  if (c.type === 'text') {
-                    return { ...c, type: 'input_text' };
-                  }
+              (message.content || []).map(async (c) => {
+                if (c.type === 'text') {
+                  return { ...c, type: 'input_text' };
+                }
 
-                  const image = await convertMessageContent(c as OpenAI.ChatCompletionContentPart);
-                  return {
-                    image_url: (image as OpenAI.ChatCompletionContentPartImage).image_url?.url,
-                    type: 'input_image',
-                  };
-                }),
-              ),
+                const image = await convertMessageContent(c as OpenAI.ChatCompletionContentPart);
+                return {
+                  image_url: (image as OpenAI.ChatCompletionContentPartImage).image_url?.url,
+                  type: 'input_image',
+                };
+              }),
+            ),
       } as OpenAI.Responses.ResponseInputItem;
 
       // remove reasoning field from the message item
