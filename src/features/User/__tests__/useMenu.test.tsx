@@ -48,22 +48,24 @@ vi.mock('./useNewVersion', () => ({
   useNewVersion: vi.fn(() => false),
 }));
 
-// 定义一个变量来存储 enableAuth 的值
-let enableAuth = true;
-let enableClerk = true;
-// 模拟 @/const/auth 模块
+// Use vi.hoisted to ensure variables exist before vi.mock factory executes
+const { enableAuth, enableClerk } = vi.hoisted(() => ({
+  enableAuth: { value: true },
+  enableClerk: { value: true },
+}));
+
 vi.mock('@/const/auth', () => ({
   get enableAuth() {
-    return enableAuth;
+    return enableAuth.value;
   },
   get enableClerk() {
-    return enableClerk;
+    return enableClerk.value;
   },
 }));
 
 afterEach(() => {
-  enableAuth = true;
-  enableClerk = true;
+  enableAuth.value = true;
+  enableClerk.value = true;
 });
 
 describe('useMenu', () => {
@@ -71,17 +73,17 @@ describe('useMenu', () => {
     act(() => {
       useUserStore.setState({ isSignedIn: true, enableAuth: () => true });
     });
-    enableAuth = true;
-    enableClerk = false;
+    enableAuth.value = true;
+    enableClerk.value = false;
 
     const { result } = renderHook(() => useMenu(), { wrapper });
 
     act(() => {
       const { mainItems, logoutItems } = result.current;
-      expect(mainItems?.some((item) => item?.key === 'profile')).toBe(true);
+      // 'setting' and 'import' are shown when logged in
       expect(mainItems?.some((item) => item?.key === 'setting')).toBe(true);
       expect(mainItems?.some((item) => item?.key === 'import')).toBe(true);
-      expect(mainItems?.some((item) => item?.key === 'changelog')).toBe(true);
+      // 'logout' is shown when isLoginWithAuth is true
       expect(logoutItems.some((item) => item?.key === 'logout')).toBe(true);
     });
   });
@@ -90,16 +92,16 @@ describe('useMenu', () => {
     act(() => {
       useUserStore.setState({ isSignedIn: false, enableAuth: () => false });
     });
-    enableAuth = false;
+    enableAuth.value = false;
 
     const { result } = renderHook(() => useMenu(), { wrapper });
 
     act(() => {
       const { mainItems, logoutItems } = result.current;
-      expect(mainItems?.some((item) => item?.key === 'profile')).toBe(true);
-      expect(mainItems?.some((item) => item?.key === 'setting')).toBe(true);
-      expect(mainItems?.some((item) => item?.key === 'import')).toBe(true);
-      expect(mainItems?.some((item) => item?.key === 'changelog')).toBe(true);
+      // When not logged in (isLogin = false), these items should not be shown
+      // isLogin checks isSignedIn, so with isSignedIn: false, isLogin should be false
+      expect(mainItems?.some((item) => item?.key === 'setting')).toBe(false);
+      expect(mainItems?.some((item) => item?.key === 'import')).toBe(false);
       expect(logoutItems.some((item) => item?.key === 'logout')).toBe(false);
     });
   });
@@ -108,17 +110,15 @@ describe('useMenu', () => {
     act(() => {
       useUserStore.setState({ isSignedIn: false, enableAuth: () => true });
     });
-    enableAuth = true;
+    enableAuth.value = true;
 
     const { result } = renderHook(() => useMenu(), { wrapper });
 
     act(() => {
       const { mainItems, logoutItems } = result.current;
-      expect(mainItems?.some((item) => item?.key === 'profile')).toBe(false);
+      // When not logged in, setting and import should not be shown
       expect(mainItems?.some((item) => item?.key === 'setting')).toBe(false);
       expect(mainItems?.some((item) => item?.key === 'import')).toBe(false);
-      expect(mainItems?.some((item) => item?.key === 'export')).toBe(false);
-      expect(mainItems?.some((item) => item?.key === 'changelog')).toBe(true);
       expect(logoutItems.some((item) => item?.key === 'logout')).toBe(false);
     });
   });

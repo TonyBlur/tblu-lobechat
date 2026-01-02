@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { FileParsingTask } from '@/types/asyncTask';
+import type { FileParsingTask } from '../asyncTask';
 
 export interface FileUploadState {
   progress: number;
@@ -80,6 +80,12 @@ export const UploadFileSchema = z.object({
    * file size
    */
   size: z.number(),
+
+  /**
+   * file source
+   */
+  source: z.string().optional(),
+
   /**
    * file url if saveMode is url
    */

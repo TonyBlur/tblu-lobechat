@@ -1,3 +1,5 @@
+import { ENABLE_BUSINESS_FEATURES } from '@lobechat/business-const';
+
 import { AiFullModelCard, LobeDefaultAiModelListItem } from '../types/aiModel';
 import { default as ai21 } from './ai21';
 import { default as ai302 } from './ai302';
@@ -29,6 +31,7 @@ import { default as infiniai } from './infiniai';
 import { default as internlm } from './internlm';
 import { default as jina } from './jina';
 import { default as lmstudio } from './lmstudio';
+import { default as lobehub } from './lobehub';
 import { default as minimax } from './minimax';
 import { default as mistral } from './mistral';
 import { default as modelscope } from './modelscope';
@@ -45,6 +48,7 @@ import { default as perplexity } from './perplexity';
 import { default as ppio } from './ppio';
 import { default as qiniu } from './qiniu';
 import { default as qwen } from './qwen';
+import { default as replicate } from './replicate';
 import { default as sambanova } from './sambanova';
 import { default as search1api } from './search1api';
 import { default as sensenova } from './sensenova';
@@ -63,6 +67,7 @@ import { default as volcengine } from './volcengine';
 import { default as wenxin } from './wenxin';
 import { default as xai } from './xai';
 import { default as xinference } from './xinference';
+import { default as zenmux } from './zenmux';
 import { default as zeroone } from './zeroone';
 import { default as zhipu } from './zhipu';
 
@@ -116,6 +121,7 @@ export const LOBE_DEFAULT_MODEL_LIST = buildDefaultModelList({
   internlm,
   jina,
   lmstudio,
+  ...(ENABLE_BUSINESS_FEATURES ? { lobehub } : {}),
   minimax,
   mistral,
   modelscope,
@@ -132,6 +138,7 @@ export const LOBE_DEFAULT_MODEL_LIST = buildDefaultModelList({
   ppio,
   qiniu,
   qwen,
+  replicate,
   sambanova,
   search1api,
   sensenova,
@@ -150,6 +157,7 @@ export const LOBE_DEFAULT_MODEL_LIST = buildDefaultModelList({
   wenxin,
   xai,
   xinference,
+  zenmux,
   zeroone,
   zhipu,
 });
@@ -201,6 +209,7 @@ export { default as perplexity } from './perplexity';
 export { default as ppio } from './ppio';
 export { default as qiniu } from './qiniu';
 export { default as qwen } from './qwen';
+export { default as replicate } from './replicate';
 export { default as sambanova } from './sambanova';
 export { default as search1api } from './search1api';
 export { default as sensenova } from './sensenova';
@@ -219,5 +228,6 @@ export { default as volcengine } from './volcengine';
 export { default as wenxin } from './wenxin';
 export { default as xai } from './xai';
 export { default as xinference } from './xinference';
+export { default as zenmux } from './zenmux';
 export { default as zeroone } from './zeroone';
 export { default as zhipu } from './zhipu';

@@ -1,6 +1,4 @@
-import { OIDCConfig, OIDCUserConfig } from '@auth/core/providers';
-
-import { authEnv } from '@/envs/auth';
+import { type OIDCConfig, type OIDCUserConfig } from '@auth/core/providers';
 
 import { CommonProviderConfig } from './sso.config';
 
@@ -41,9 +39,9 @@ const provider = {
     },
     // You can get the issuer value from the Logto Application Details page,
     // in the field "Issuer endpoint"
-    clientId: authEnv.LOGTO_CLIENT_ID ?? process.env.AUTH_LOGTO_ID,
-    clientSecret: authEnv.LOGTO_CLIENT_SECRET ?? process.env.AUTH_LOGTO_SECRET,
-    issuer: authEnv.LOGTO_ISSUER ?? process.env.AUTH_LOGTO_ISSUER,
+    clientId: process.env.AUTH_LOGTO_ID,
+    clientSecret: process.env.AUTH_LOGTO_SECRET,
+    issuer: process.env.AUTH_LOGTO_ISSUER,
   }),
 };
 

@@ -1,7 +1,7 @@
 import { ARTIFACT_TAG_CLOSED_REGEX, ARTIFACT_TAG_REGEX } from '@/const/plugin';
 import type { ChatStoreState } from '@/store/chat';
 
-import { chatSelectors } from '../message/selectors';
+import { dbMessageSelectors } from '../message/selectors';
 
 const showPortal = (s: ChatStoreState) => s.showPortal;
 
@@ -19,6 +19,11 @@ const showFilePreview = (s: ChatStoreState) => !!s.portalFile;
 const previewFileId = (s: ChatStoreState) => s.portalFile?.fileId;
 const chunkText = (s: ChatStoreState) => s.portalFile?.chunkText;
 
+const showNotebook = (s: ChatStoreState) => !!s.showNotebook;
+
+const showDocument = (s: ChatStoreState) => !!s.portalDocumentId;
+const portalDocumentId = (s: ChatStoreState) => s.portalDocumentId;
+
 const showArtifactUI = (s: ChatStoreState) => !!s.portalArtifact;
 const artifactTitle = (s: ChatStoreState) => s.portalArtifact?.title;
 const artifactIdentifier = (s: ChatStoreState) => s.portalArtifact?.identifier || '';
@@ -27,7 +32,7 @@ const artifactType = (s: ChatStoreState) => s.portalArtifact?.type;
 const artifactCodeLanguage = (s: ChatStoreState) => s.portalArtifact?.language;
 
 const artifactMessageContent = (id: string) => (s: ChatStoreState) => {
-  const message = chatSelectors.getMessageById(id)(s);
+  const message = dbMessageSelectors.getDbMessageById(id)(s);
   return message?.content || '';
 };
 
@@ -59,6 +64,11 @@ export const chatPortalSelectors = {
 
   messageDetailId,
   showMessageDetail,
+
+  showNotebook,
+
+  showDocument,
+  portalDocumentId,
 
   showPluginUI,
   showPortal,

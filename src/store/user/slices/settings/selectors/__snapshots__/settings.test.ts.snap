@@ -95,19 +95,11 @@ exports[`settingsSelectors > currentTTS > should merge DEFAULT_TTS_CONFIG and s.
 }
 `;
 
-exports[`settingsSelectors > dalleConfig > should return the dalle configuration 1`] = `
-{
-  "apiKey": "dalle-api-key",
-  "autoGenerate": true,
-}
-`;
-
 exports[`settingsSelectors > defaultAgent > should merge DEFAULT_AGENT and s.settings.defaultAgent correctly 1`] = `
 {
   "config": {
     "chatConfig": {
       "autoCreateTopicThreshold": 2,
-      "displayMode": "chat",
       "enableAutoCreateTopic": true,
       "enableCompressHistory": true,
       "enableHistoryCount": true,
@@ -152,7 +144,6 @@ exports[`settingsSelectors > defaultAgentConfig > should merge DEFAULT_AGENT_CON
 {
   "chatConfig": {
     "autoCreateTopicThreshold": 2,
-    "displayMode": "chat",
     "enableAutoCreateTopic": true,
     "enableCompressHistory": true,
     "enableHistoryCount": true,

@@ -1,50 +1,6 @@
-/* eslint-disable sort-keys-fix/sort-keys-fix */
-// ******* Runtime Biz Error ******* //
-export const AgentRuntimeErrorType = {
-  AgentRuntimeError: 'AgentRuntimeError', // Agent Runtime 模块运行时错误
-  LocationNotSupportError: 'LocationNotSupportError',
-
-  QuotaLimitReached: 'QuotaLimitReached',
-  InsufficientQuota: 'InsufficientQuota',
-
-  ModelNotFound: 'ModelNotFound',
-
-  PermissionDenied: 'PermissionDenied',
-  ExceededContextWindow: 'ExceededContextWindow',
-
-  InvalidProviderAPIKey: 'InvalidProviderAPIKey',
-  ProviderBizError: 'ProviderBizError',
-
-  InvalidOllamaArgs: 'InvalidOllamaArgs',
-  OllamaBizError: 'OllamaBizError',
-  OllamaServiceUnavailable: 'OllamaServiceUnavailable',
-
-  InvalidComfyUIArgs: 'InvalidComfyUIArgs',
-  ComfyUIBizError: 'ComfyUIBizError',
-  ComfyUIServiceUnavailable: 'ComfyUIServiceUnavailable',
-  ComfyUIEmptyResult: 'ComfyUIEmptyResult',
-  ComfyUIUploadFailed: 'ComfyUIUploadFailed',
-  ComfyUIWorkflowError: 'ComfyUIWorkflowError',
-  ComfyUIModelError: 'ComfyUIModelError',
-
-  InvalidBedrockCredentials: 'InvalidBedrockCredentials',
-  InvalidVertexCredentials: 'InvalidVertexCredentials',
-  StreamChunkError: 'StreamChunkError',
-
-  InvalidGithubToken: 'InvalidGithubToken',
-
-  ConnectionCheckFailed: 'ConnectionCheckFailed',
-
-  /**
-   * @deprecated
-   */
-  NoOpenAIAPIKey: 'NoOpenAIAPIKey',
-} as const;
+import { AgentRuntimeErrorType, ILobeAgentRuntimeErrorType } from '@lobechat/types';
 
 export const AGENT_RUNTIME_ERROR_SET = new Set<string>(Object.values(AgentRuntimeErrorType));
-
-export type ILobeAgentRuntimeErrorType =
-  (typeof AgentRuntimeErrorType)[keyof typeof AgentRuntimeErrorType];
 
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 export const StandardErrorType = {
@@ -74,3 +30,6 @@ export interface ChatMessageError {
   message: string;
   type: ErrorType | ILobeAgentRuntimeErrorType;
 }
+
+export type { ILobeAgentRuntimeErrorType } from '@lobechat/types';
+export { AgentRuntimeErrorType } from '@lobechat/types';

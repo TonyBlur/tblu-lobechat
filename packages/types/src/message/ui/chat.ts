@@ -1,5 +1,5 @@
-import { MetaData } from '../../meta';
 import { GroundingSearch } from '../../search';
+import { ThreadStatus } from '../../topic/thread';
 import {
   ChatImageItem,
   ChatMessageError,
@@ -8,12 +8,28 @@ import {
   ModelReasoning,
   ModelUsage,
 } from '../common';
-import { ChatPluginPayload, ChatToolPayload, ChatToolPayloadWithResult } from '../common/tools';
+import {
+  ChatPluginPayload,
+  ChatToolPayload,
+  ChatToolPayloadWithResult,
+  ToolIntervention,
+} from '../common/tools';
 import { ChatMessageExtra } from './extra';
 import { ChatFileChunk } from './rag';
 import { ChatVideoItem } from './video';
 
-export type UIMessageRoleType = 'user' | 'system' | 'assistant' | 'tool' | 'supervisor' | 'group';
+export type UIMessageRoleType =
+  | 'user'
+  | 'system'
+  | 'assistant'
+  | 'tool'
+  | 'task'
+  | 'tasks'
+  | 'supervisor'
+  | 'assistantGroup'
+  | 'agentCouncil'
+  | 'compressedGroup'
+  | 'compareGroup';
 
 export interface ChatFileItem {
   content?: string;
@@ -26,17 +42,61 @@ export interface ChatFileItem {
 
 export interface AssistantContentBlock {
   content: string;
+  error?: ChatMessageError | null;
   fileList?: ChatFileItem[];
   id: string;
   imageList?: ChatImageItem[];
+  metadata?: Record<string, any>;
   performance?: ModelPerformance;
+  reasoning?: ModelReasoning;
   tools?: ChatToolPayloadWithResult[];
   usage?: ModelUsage;
+}
+interface UIMessageBranch {
+  /** Index of the active branch (0-based) */
+  activeBranchIndex: number;
+  /** Total number of branches */
+  count: number;
+}
+
+/**
+ * Task execution details for role='task' messages
+ * Retrieved from the associated Thread via sourceMessageId
+ */
+export interface TaskDetail {
+  /** Task completion time (ISO string) */
+  completedAt?: string;
+  /** Execution duration in milliseconds */
+  duration?: number;
+  /** Error message if task failed */
+  error?: string;
+  /** Task start time (ISO string) */
+  startedAt?: string;
+  /** Task status */
+  status: ThreadStatus;
+  /** Thread ID for navigation */
+  threadId: string;
+  /** Thread title/summary */
+  title?: string;
+  /** Total cost in dollars */
+  totalCost?: number;
+  /** Total messages created during execution */
+  totalMessages?: number;
+  /** Total execution steps */
+  totalSteps?: number;
+  /** Total tokens consumed */
+  totalTokens?: number;
+  /** Total tool calls made */
+  totalToolCalls?: number;
 }
 
 export interface UIChatMessage {
   // Group chat fields (alphabetically before other fields)
   agentId?: string | 'supervisor';
+  /**
+   * Branch information for user messages with multiple children
+   */
+  branch?: UIMessageBranch;
   /**
    * children messages for grouped display
    * Used to group tool messages under their parent assistant message
@@ -46,9 +106,8 @@ export interface UIChatMessage {
   content: string;
   createdAt: number;
   error?: ChatMessageError | null;
-  // 扩展字段
+  // Extended fields
   extra?: ChatMessageExtra;
-
   fileList?: ChatFileItem[];
   /**
    * this is a deprecated field, only use in client db
@@ -60,8 +119,9 @@ export interface UIChatMessage {
   groupId?: string;
   id: string;
   imageList?: ChatImageItem[];
-  meta: MetaData;
+  members?: UIChatMessage[];
   metadata?: MessageMetadata | null;
+  model?: string | null;
   /**
    * observation id
    */
@@ -75,9 +135,23 @@ export interface UIChatMessage {
    * Aggregated from all children in group messages
    */
   performance?: ModelPerformance;
+  /**
+   * Pinned messages within a compression group (role: 'compressedGroup')
+   * Messages marked as favorite=true are included here
+   */
+  pinnedMessages?: {
+    content: string | null;
+    createdAt: Date;
+    id: string;
+    model: string | null;
+    provider: string | null;
+    role: string;
+  }[];
   plugin?: ChatPluginPayload;
   pluginError?: any;
+  pluginIntervention?: ToolIntervention;
   pluginState?: any;
+  provider?: string | null;
   /**
    * quoted other message's id
    */
@@ -96,15 +170,25 @@ export interface UIChatMessage {
    * target member ID for DM messages in group chat
    */
   targetId?: string | null;
+  /**
+   * Task execution details for role='task' messages
+   * Retrieved from the associated Thread via sourceMessageId
+   */
+  taskDetail?: TaskDetail;
+  /**
+   * Task messages for role='tasks' virtual message
+   * Contains aggregated task messages with same parentId
+   */
+  tasks?: UIChatMessage[];
   threadId?: string | null;
   tool_call_id?: string;
   tools?: ChatToolPayload[];
   /**
-   * 保存到主题的消息
+   * Messages saved to topic
    */
   topicId?: string;
   /**
-   * 观测链路 id
+   * Observation trace ID
    */
   traceId?: string;
   updatedAt: number;

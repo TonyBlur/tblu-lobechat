@@ -1,4 +1,4 @@
-import { ChatCompletionErrorPayload, TextToImagePayload } from '@lobechat/model-runtime';
+import { type ChatCompletionErrorPayload, type TextToImagePayload } from '@lobechat/model-runtime';
 import { ChatErrorType } from '@lobechat/types';
 import { NextResponse } from 'next/server';
 
@@ -45,7 +45,7 @@ export const preferredRegion = [
 // );
 
 export const POST = checkAuth(async (req: Request, { params, jwtPayload }) => {
-  const { provider } = await params;
+  const provider = (await params)!.provider!;
 
   try {
     // ============  1. init chat model   ============ //

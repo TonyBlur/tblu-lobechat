@@ -1,12 +1,28 @@
-import { OpenAIChatMessage, UIChatMessage } from '@lobechat/types';
+import { type OpenAIChatMessage, type UIChatMessage } from '@lobechat/types';
 
 import { encodeAsync } from '@/utils/tokenizer';
 
 export const getMessagesTokenCount = async (messages: OpenAIChatMessage[]) =>
   encodeAsync(messages.map((m) => m.content).join(''));
 
-export const getMessageById = (messages: UIChatMessage[], id: string) =>
-  messages.find((m) => m.id === id);
+export const getMessageById = (
+  messages: UIChatMessage[],
+  id: string,
+): UIChatMessage | undefined => {
+  // First try to find in top-level messages
+  const directMatch = messages.find((m) => m.id === id);
+  if (directMatch) return directMatch;
+
+  // If not found, search in agentCouncil members
+  for (const message of messages) {
+    if (message.role === 'agentCouncil' && (message as any).members) {
+      const member = (message as any).members.find((m: UIChatMessage) => m.id === id);
+      if (member) return member;
+    }
+  }
+
+  return undefined;
+};
 
 const getSlicedMessages = (
   messages: UIChatMessage[],

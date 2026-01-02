@@ -1,9 +1,10 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { mutate } from 'swr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { withSWR } from '~test-utils';
 
 import { message } from '@/components/AntdStaticMethods';
 import { FILE_UPLOAD_BLACKLIST, MAX_UPLOAD_FILE_COUNT } from '@/const/file';
+import { mutate } from '@/libs/swr';
 import { lambdaClient } from '@/libs/trpc/client';
 import { fileService } from '@/services/file';
 import { ragService } from '@/services/rag';
@@ -46,9 +47,9 @@ vi.mock('p-map', () => ({
   }),
 }));
 
-// Mock SWR
-vi.mock('swr', async () => {
-  const actual = await vi.importActual('swr');
+// Mock @/libs/swr mutate
+vi.mock('@/libs/swr', async () => {
+  const actual = await vi.importActual('@/libs/swr');
   return {
     ...actual,
     mutate: vi.fn(),
@@ -61,6 +62,7 @@ vi.mock('@/libs/trpc/client', () => ({
     file: {
       getFileItemById: { query: vi.fn() },
       getFiles: { query: vi.fn() },
+      getKnowledgeItems: { query: vi.fn() },
       removeFileAsyncTask: { mutate: vi.fn() },
     },
   },
@@ -339,7 +341,7 @@ describe('FileManagerActions', () => {
       const { result } = renderHook(() => useStore());
 
       const uploadSpy = vi.spyOn(result.current, 'uploadWithProgress');
-      const refreshSpy = vi.spyOn(result.current, 'refreshFileList');
+      const refreshSpy = vi.spyOn(result.current, 'refreshFileList').mockResolvedValue();
       const parseSpy = vi.spyOn(result.current, 'parseFilesToChunks');
 
       await act(async () => {
@@ -347,7 +349,8 @@ describe('FileManagerActions', () => {
       });
 
       expect(uploadSpy).not.toHaveBeenCalled();
-      expect(refreshSpy).not.toHaveBeenCalled();
+      // refreshFileList is always called after uploads complete, even for empty list
+      expect(refreshSpy).toHaveBeenCalled();
       expect(parseSpy).not.toHaveBeenCalled();
     });
 
@@ -598,29 +601,17 @@ describe('FileManagerActions', () => {
   });
 
   describe('refreshFileList', () => {
-    it('should call mutate with correct key', async () => {
-      const { result } = renderHook(() => useStore());
-
-      const params = { category: 'all' };
-      act(() => {
-        useStore.setState({ queryListParams: params });
-      });
-
-      await act(async () => {
-        await result.current.refreshFileList();
-      });
-
-      expect(mutate).toHaveBeenCalledWith(['useFetchFileManage', params]);
-    });
-
-    it('should call mutate with undefined params', async () => {
+    it('should call mutate with key matcher function and revalidate option', async () => {
       const { result } = renderHook(() => useStore());
 
       await act(async () => {
         await result.current.refreshFileList();
       });
 
-      expect(mutate).toHaveBeenCalledWith(['useFetchFileManage', undefined]);
+      // The implementation now uses a key matcher function
+      expect(mutate).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), {
+        revalidate: true,
+      });
     });
   });
 
@@ -802,7 +793,7 @@ describe('FileManagerActions', () => {
     it('should not fetch when id is undefined', () => {
       const { result } = renderHook(() => useStore());
 
-      renderHook(() => result.current.useFetchFileItem(undefined));
+      renderHook(() => result.current.useFetchKnowledgeItem(undefined));
 
       expect(lambdaClient.file.getFileItemById.query).not.toHaveBeenCalled();
     });
@@ -820,13 +811,17 @@ describe('FileManagerActions', () => {
         id: 'file-1',
         name: 'test.txt',
         size: 100,
+        sourceType: 'file',
         updatedAt: new Date(),
         url: 'http://example.com/test.txt',
       };
 
       vi.mocked(lambdaClient.file.getFileItemById.query).mockResolvedValue(mockFile);
 
-      const { result: swrResult } = renderHook(() => result.current.useFetchFileItem('file-1'));
+      const { result: swrResult } = renderHook(
+        () => result.current.useFetchKnowledgeItem('file-1'),
+        { wrapper: withSWR },
+      );
 
       await waitFor(() => {
         expect(swrResult.current.data).toEqual(mockFile);
@@ -834,7 +829,7 @@ describe('FileManagerActions', () => {
     });
   });
 
-  describe('useFetchFileManage', () => {
+  describe('useFetchKnowledgeItems', () => {
     it('should fetch file list with params', async () => {
       const { result } = renderHook(() => useStore());
 
@@ -849,6 +844,7 @@ describe('FileManagerActions', () => {
           id: 'file-1',
           name: 'test1.txt',
           size: 100,
+          sourceType: 'file',
           updatedAt: new Date(),
           url: 'http://example.com/test1.txt',
         },
@@ -862,15 +858,22 @@ describe('FileManagerActions', () => {
           id: 'file-2',
           name: 'test2.txt',
           size: 200,
+          sourceType: 'file',
           updatedAt: new Date(),
           url: 'http://example.com/test2.txt',
         },
       ];
 
-      vi.mocked(lambdaClient.file.getFiles.query).mockResolvedValue(mockFiles);
+      vi.mocked(lambdaClient.file.getKnowledgeItems.query).mockResolvedValue({
+        hasMore: false,
+        items: mockFiles,
+      });
 
       const params = { category: 'all' as any };
-      const { result: swrResult } = renderHook(() => result.current.useFetchFileManage(params));
+      const { result: swrResult } = renderHook(
+        () => result.current.useFetchKnowledgeItems(params),
+        { wrapper: withSWR },
+      );
 
       await waitFor(() => {
         expect(swrResult.current.data).toEqual(mockFiles);
@@ -891,15 +894,19 @@ describe('FileManagerActions', () => {
           id: 'file-1',
           name: 'test.txt',
           size: 100,
+          sourceType: 'file',
           updatedAt: new Date(),
           url: 'http://example.com/test.txt',
         },
       ];
 
-      vi.mocked(lambdaClient.file.getFiles.query).mockResolvedValue(mockFiles);
+      vi.mocked(lambdaClient.file.getKnowledgeItems.query).mockResolvedValue({
+        hasMore: false,
+        items: mockFiles,
+      });
 
       const params = { category: 'all' as any };
-      renderHook(() => result.current.useFetchFileManage(params));
+      renderHook(() => result.current.useFetchKnowledgeItems(params), { wrapper: withSWR });
 
       await waitFor(() => {
         expect(result.current.fileList).toEqual(mockFiles);

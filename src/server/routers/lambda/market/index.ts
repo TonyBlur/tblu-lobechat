@@ -1,24 +1,133 @@
+import { isDesktop } from '@lobechat/const';
 import { TRPCError } from '@trpc/server';
 import { serialize } from 'cookie';
 import debug from 'debug';
 import { z } from 'zod';
 
-import { isDesktop } from '@/const/version';
-import { publicProcedure, router } from '@/libs/trpc/lambda';
+import { type ToolCallContent } from '@/libs/mcp';
+import { authedProcedure, publicProcedure, router } from '@/libs/trpc/lambda';
+import { marketUserInfo, serverDatabase } from '@/libs/trpc/lambda/middleware';
 import { DiscoverService } from '@/server/services/discover';
-import { AssistantSorts, McpSorts, ModelSorts, PluginSorts, ProviderSorts } from '@/types/discover';
+import { FileService } from '@/server/services/file';
+import {
+  contentBlocksToString,
+  processContentBlocks,
+} from '@/server/services/mcp/contentProcessor';
+import {
+  AssistantSorts,
+  McpConnectionType,
+  McpSorts,
+  ModelSorts,
+  PluginSorts,
+  ProviderSorts,
+} from '@/types/discover';
 
 const log = debug('lambda-router:market');
 
-const marketProcedure = publicProcedure.use(async ({ ctx, next }) => {
-  return next({
-    ctx: {
-      discoverService: new DiscoverService({ accessToken: ctx.marketAccessToken }),
-    },
+const marketSourceSchema = z.enum(['legacy', 'new']);
+
+// Public procedure with optional user info for trusted client token
+const marketProcedure = publicProcedure
+  .use(serverDatabase)
+  .use(marketUserInfo)
+  .use(async ({ ctx, next }) => {
+    return next({
+      ctx: {
+        discoverService: new DiscoverService({
+          accessToken: ctx.marketAccessToken,
+          userInfo: ctx.marketUserInfo,
+        }),
+      },
+    });
   });
-});
+
+// Procedure with user authentication for operations requiring user access token
+const authedMarketProcedure = authedProcedure
+  .use(serverDatabase)
+  .use(marketUserInfo)
+  .use(async ({ ctx, next }) => {
+    const { UserModel } = await import('@/database/models/user');
+    const userModel = new UserModel(ctx.serverDB, ctx.userId);
+
+    return next({
+      ctx: {
+        discoverService: new DiscoverService({
+          accessToken: ctx.marketAccessToken,
+          userInfo: ctx.marketUserInfo,
+        }),
+        fileService: new FileService(ctx.serverDB, ctx.userId),
+        userModel,
+      },
+    });
+  });
 
 export const marketRouter = router({
+  // ============================== Cloud MCP Gateway ==============================
+  callCloudMcpEndpoint: authedMarketProcedure
+    .input(
+      z.object({
+        apiParams: z.record(z.any()),
+        identifier: z.string(),
+        toolName: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      log('callCloudMcpEndpoint input: %O', input);
+
+      try {
+        // Query user_settings to get market.accessToken
+        const userState = await ctx.userModel.getUserState(async () => ({}));
+        const userAccessToken = userState.settings?.market?.accessToken;
+
+        log('callCloudMcpEndpoint: userAccessToken exists=%s', !!userAccessToken);
+
+        if (!userAccessToken) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'User access token not found. Please sign in to Market first.',
+          });
+        }
+
+        const cloudResult = await ctx.discoverService.callCloudMcpEndpoint({
+          apiParams: input.apiParams,
+          identifier: input.identifier,
+          toolName: input.toolName,
+          userAccessToken,
+        });
+        const cloudResultContent = (cloudResult?.content ?? []) as ToolCallContent[];
+
+        // Format the cloud result to MCPToolCallResult format
+        // Process content blocks (upload images, etc.)
+        const newContent =
+          cloudResult?.isError || !ctx.fileService
+            ? cloudResultContent
+            : // FIXME: the type assertion here is a temporary solution, need to remove it after refactoring
+              await processContentBlocks(cloudResultContent, ctx.fileService);
+
+        // Convert content blocks to string
+        const content = contentBlocksToString(newContent);
+        const state = { ...cloudResult, content: newContent };
+
+        if (cloudResult?.isError) {
+          return { content, state, success: true };
+        }
+
+        return { content, state, success: true };
+      } catch (error) {
+        log('Error calling cloud MCP endpoint: %O', error);
+
+        // Re-throw TRPCError as-is
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to call cloud MCP endpoint',
+        });
+      }
+    }),
+
   // ============================== Assistant Market ==============================
   getAssistantCategories: marketProcedure
     .input(
@@ -26,6 +135,7 @@ export const marketRouter = router({
         .object({
           locale: z.string().optional(),
           q: z.string().optional(),
+          source: marketSourceSchema.optional(),
         })
         .optional(),
     )
@@ -48,6 +158,8 @@ export const marketRouter = router({
       z.object({
         identifier: z.string(),
         locale: z.string().optional(),
+        source: marketSourceSchema.optional(),
+        version: z.string().optional(),
       }),
     )
     .query(async ({ input, ctx }) => {
@@ -64,31 +176,42 @@ export const marketRouter = router({
       }
     }),
 
-  getAssistantIdentifiers: marketProcedure.query(async ({ ctx }) => {
-    log('getAssistantIdentifiers called');
+  getAssistantIdentifiers: marketProcedure
+    .input(
+      z
+        .object({
+          source: marketSourceSchema.optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ input, ctx }) => {
+      log('getAssistantIdentifiers called with input: %O', input);
 
-    try {
-      return await ctx.discoverService.getAssistantIdentifiers();
-    } catch (error) {
-      log('Error fetching assistant identifiers: %O', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to fetch assistant identifiers',
-      });
-    }
-  }),
+      try {
+        return await ctx.discoverService.getAssistantIdentifiers(input);
+      } catch (error) {
+        log('Error fetching assistant identifiers: %O', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch assistant identifiers',
+        });
+      }
+    }),
 
   getAssistantList: marketProcedure
     .input(
       z
         .object({
           category: z.string().optional(),
+          connectionType: z.nativeEnum(McpConnectionType).optional(),
           locale: z.string().optional(),
           order: z.enum(['asc', 'desc']).optional(),
+          ownerId: z.string().optional(),
           page: z.number().optional(),
           pageSize: z.number().optional(),
           q: z.string().optional(),
           sort: z.nativeEnum(AssistantSorts).optional(),
+          source: marketSourceSchema.optional(),
         })
         .optional(),
     )
@@ -178,6 +301,7 @@ export const marketRouter = router({
       z
         .object({
           category: z.string().optional(),
+          connectionType: z.nativeEnum(McpConnectionType).optional(),
           locale: z.string().optional(),
           order: z.enum(['asc', 'desc']).optional(),
           page: z.number().optional(),
@@ -462,6 +586,28 @@ export const marketRouter = router({
       }
     }),
 
+  // ============================== User Profile ==============================
+  getUserInfo: marketProcedure
+    .input(
+      z.object({
+        locale: z.string().optional(),
+        username: z.string(),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      log('getUserInfo input: %O', input);
+
+      try {
+        return await ctx.discoverService.getUserInfo(input);
+      } catch (error) {
+        log('Error fetching user info: %O', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch user info',
+        });
+      }
+    }),
+
   registerClientInMarketplace: marketProcedure.input(z.object({})).mutation(async ({ ctx }) => {
     return ctx.discoverService.registerClient({
       userAgent: ctx.userAgent,
@@ -533,8 +679,24 @@ export const marketRouter = router({
       }
     }),
 
-  // ============================== Analytics ==============================
+  reportAgentInstall: marketProcedure
+    .input(
+      z.object({
+        identifier: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      log('reportAgentInstall input: %O', input);
+      try {
+        await ctx.discoverService.increaseAgentInstallCount(input.identifier);
+        return { success: true };
+      } catch (error) {
+        log('Error reporting agent installation: %O', error);
+        return { success: false };
+      }
+    }),
 
+  // ============================== Analytics ==============================
   reportCall: marketProcedure
     .input(
       z.object({

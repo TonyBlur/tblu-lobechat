@@ -1,19 +1,19 @@
+import { Flexbox } from '@lobehub/ui';
 import { memo } from 'react';
-import { Flexbox } from 'react-layout-kit';
 
-import ExtraContainer from '@/features/Conversation/components/Extras/ExtraContainer';
-import TTS from '@/features/Conversation/components/Extras/TTS';
-import Translate from '@/features/Conversation/components/Extras/Translate';
-import { useChatStore } from '@/store/chat';
-import { chatSelectors } from '@/store/chat/selectors';
+import { messageStateSelectors, useConversationStore } from '../../store';
+import ExtraContainer from '../components/Extras/ExtraContainer';
+import TTS from '../components/Extras/TTS';
+import Translate from '../components/Extras/Translate';
 
 interface UserMessageExtraProps {
   content: string;
   extra: any;
   id: string;
 }
+
 export const UserMessageExtra = memo<UserMessageExtraProps>(({ extra, id, content }) => {
-  const loading = useChatStore(chatSelectors.isMessageGenerating(id));
+  const loading = useConversationStore(messageStateSelectors.isMessageGenerating(id));
 
   const showTranslate = !!extra?.translate;
   const showTTS = !!extra?.tts;

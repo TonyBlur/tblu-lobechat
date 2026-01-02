@@ -9,49 +9,59 @@ export interface WorkingModel {
 }
 
 export interface LobeAgentChatConfig {
-  displayMode?: 'chat' | 'docs';
-
   enableAutoCreateTopic?: boolean;
   autoCreateTopicThreshold: number;
 
   enableMaxTokens?: boolean;
 
   /**
-   * 是否开启流式输出
+   * Whether to enable streaming output
    */
   enableStreaming?: boolean;
 
   /**
-   * 是否开启推理
+   * Whether to enable reasoning
    */
   enableReasoning?: boolean;
   /**
-   * 自定义推理强度
+   * Custom reasoning effort level
    */
   enableReasoningEffort?: boolean;
   reasoningBudgetToken?: number;
   reasoningEffort?: 'low' | 'medium' | 'high';
   gpt5ReasoningEffort?: 'minimal' | 'low' | 'medium' | 'high';
+  gpt5_1ReasoningEffort?: 'none' | 'low' | 'medium' | 'high';
+  gpt5_2ReasoningEffort?: 'none' | 'low' | 'medium' | 'high' | 'xhigh';
+  gpt5_2ProReasoningEffort?: 'medium' | 'high' | 'xhigh';
   /**
-   * 输出文本详细程度控制
+   * Output text verbosity control
    */
   textVerbosity?: 'low' | 'medium' | 'high';
   thinking?: 'disabled' | 'auto' | 'enabled';
+  thinkingLevel?: 'minimal' | 'low' | 'medium' | 'high';
   thinkingBudget?: number;
   /**
-   * 禁用上下文缓存
+   * Image aspect ratio for image generation models
+   */
+  imageAspectRatio?: string;
+  /**
+   * Image resolution for image generation models
+   */
+  imageResolution?: '1K' | '2K' | '4K';
+  /**
+   * Disable context caching
    */
   disableContextCaching?: boolean;
   /**
-   * 历史消息条数
+   * Number of historical messages
    */
   historyCount?: number;
   /**
-   * 开启历史记录条数
+   * Enable historical message count
    */
   enableHistoryCount?: boolean;
   /**
-   * 历史消息长度压缩阈值
+   * Enable history message compression threshold
    */
   enableCompressHistory?: boolean;
 
@@ -66,7 +76,7 @@ export interface LobeAgentChatConfig {
 
 export const AgentChatConfigSchema = z.object({
   autoCreateTopicThreshold: z.number().default(2),
-  displayMode: z.enum(['chat', 'docs']).optional(),
+  disableContextCaching: z.boolean().optional(),
   enableAutoCreateTopic: z.boolean().optional(),
   enableCompressHistory: z.boolean().optional(),
   enableHistoryCount: z.boolean().optional(),
@@ -74,8 +84,15 @@ export const AgentChatConfigSchema = z.object({
   enableReasoning: z.boolean().optional(),
   enableReasoningEffort: z.boolean().optional(),
   enableStreaming: z.boolean().optional(),
+  gpt5ReasoningEffort: z.enum(['minimal', 'low', 'medium', 'high']).optional(),
+  gpt5_1ReasoningEffort: z.enum(['none', 'low', 'medium', 'high']).optional(),
+  gpt5_2ProReasoningEffort: z.enum(['medium', 'high', 'xhigh']).optional(),
+  gpt5_2ReasoningEffort: z.enum(['none', 'low', 'medium', 'high', 'xhigh']).optional(),
   historyCount: z.number().optional(),
+  imageAspectRatio: z.string().optional(),
+  imageResolution: z.enum(['1K', '2K', '4K']).optional(),
   reasoningBudgetToken: z.number().optional(),
+  reasoningEffort: z.enum(['low', 'medium', 'high']).optional(),
   searchFCModel: z
     .object({
       model: z.string(),
@@ -84,4 +101,9 @@ export const AgentChatConfigSchema = z.object({
     .optional(),
   searchMode: z.enum(['off', 'on', 'auto']).optional(),
   textVerbosity: z.enum(['low', 'medium', 'high']).optional(),
+  thinking: z.enum(['disabled', 'auto', 'enabled']).optional(),
+  thinkingBudget: z.number().optional(),
+  thinkingLevel: z.enum(['minimal', 'low', 'medium', 'high']).optional(),
+  urlContext: z.boolean().optional(),
+  useModelBuiltinSearch: z.boolean().optional(),
 });

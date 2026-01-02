@@ -1,16 +1,19 @@
-import { template } from 'lodash-es';
+import { template } from 'es-toolkit/compat';
 
+import { useAgentStore } from '@/store/agent';
+import { agentSelectors } from '@/store/agent/selectors';
 import { useUserStore } from '@/store/user';
 import { userProfileSelectors } from '@/store/user/selectors';
 
 import { uuid } from '../uuid';
+import { globalAgentContextManager } from './GlobalAgentContextManager';
 
 const placeholderVariablesRegex = /{{(.*?)}}/g;
 
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 export const VARIABLE_GENERATORS = {
   /**
-   * 时间类模板变量
+   * Time-related template variables
    *
    * | Value | Example |
    * |-------|---------|
@@ -46,12 +49,12 @@ export const VARIABLE_GENERATORS = {
   year: () => new Date().getFullYear().toString(),
 
   /**
-   * 用户信息类模板变量
+   * User information template variables
    *
    * | Value | Example |
    * |-------|---------|
    * | `{{email}}` | demo@lobehub.com |
-   * | `{{nickname}}` | 社区版用户 |
+   * | `{{nickname}}` | Community User |
    * | `{{username}}` | LobeChat |
    *
    */
@@ -63,7 +66,7 @@ export const VARIABLE_GENERATORS = {
     '',
 
   /**
-   * 随机值类模板变量
+   * Random value template variables
    *
    * | Value | Example |
    * |-------|---------|
@@ -87,7 +90,7 @@ export const VARIABLE_GENERATORS = {
   random_digit: () => Math.floor(Math.random() * 10).toString(),
 
   /**
-   * UUID 类模板变量
+   * UUID-type template variables
    *
    * | Value | Example |
    * |-------|---------|
@@ -99,7 +102,7 @@ export const VARIABLE_GENERATORS = {
   uuid_short: () => uuid().split('-')[0],
 
   /**
-   * 平台类模板变量
+   * Platform-related template variables
    *
    * | Value | Example |
    * |-------|---------|
@@ -111,12 +114,48 @@ export const VARIABLE_GENERATORS = {
   language: () => (typeof navigator !== 'undefined' ? navigator.language : ''),
   platform: () => (typeof navigator !== 'undefined' ? navigator.platform : ''),
   user_agent: () => (typeof navigator !== 'undefined' ? navigator.userAgent : ''),
+
+  /**
+   * Model-related template variables
+   *
+   * | Value | Example |
+   * |-------|---------|
+   * | `{{model}}` | gpt-4o |
+   * | `{{provider}}` | openai |
+   *
+   */
+  model: () => agentSelectors.currentAgentModel(useAgentStore.getState()),
+  provider: () => agentSelectors.currentAgentModelProvider(useAgentStore.getState()),
+
+  /**
+   * Desktop app path-related template variables (only available in Electron)
+   *
+   * | Value | Example |
+   * |-------|---------|
+   * | `{{homePath}}` | /Users/username |
+   * | `{{desktopPath}}` | /Users/username/Desktop |
+   * | `{{documentsPath}}` | /Users/username/Documents |
+   * | `{{downloadsPath}}` | /Users/username/Downloads |
+   * | `{{musicPath}}` | /Users/username/Music |
+   * | `{{picturesPath}}` | /Users/username/Pictures |
+   * | `{{videosPath}}` | /Users/username/Videos |
+   * | `{{userDataPath}}` | /Users/username/Library/Application Support/LobeChat |
+   *
+   */
+  homePath: () => globalAgentContextManager.getContext().homePath ?? '',
+  desktopPath: () => globalAgentContextManager.getContext().desktopPath ?? '',
+  documentsPath: () => globalAgentContextManager.getContext().documentsPath ?? '',
+  downloadsPath: () => globalAgentContextManager.getContext().downloadsPath ?? '',
+  musicPath: () => globalAgentContextManager.getContext().musicPath ?? '',
+  picturesPath: () => globalAgentContextManager.getContext().picturesPath ?? '',
+  videosPath: () => globalAgentContextManager.getContext().videosPath ?? '',
+  userDataPath: () => globalAgentContextManager.getContext().userDataPath ?? '',
 } as Record<string, () => string>;
 
 /**
- * 从文本中提取所有 {{variable}} 占位符的变量名
- * @param text 包含模板变量的字符串
- * @returns 变量名数组，如 ['date', 'nickname']
+ * Extract all {{variable}} placeholder variable names from text
+ * @param text String containing template variables
+ * @returns Array of variable names, e.g., ['date', 'nickname']
  */
 const extractPlaceholderVariables = (text: string): string[] => {
   const matches = [...text.matchAll(placeholderVariablesRegex)];
@@ -124,15 +163,15 @@ const extractPlaceholderVariables = (text: string): string[] => {
 };
 
 /**
- * 将模板变量替换为实际值，并支持递归解析嵌套变量
- * @param text - 含变量的原始文本
- * @param depth - 递归深度，默认 1，设置更高可支持 {{text}} 中的 {{date}} 等
- * @returns 替换后的文本
+ * Replace template variables with actual values, supporting recursive parsing of nested variables
+ * @param text - Original text containing variables
+ * @param depth - Recursion depth, default 1, set higher to support {{date}} within {{text}} etc.
+ * @returns Replaced text
  */
 export const parsePlaceholderVariables = (text: string, depth = 2): string => {
   let result = text;
 
-  // 递归解析，用于处理如 {{text}} 存在额外预设变量
+  // Recursive parsing to handle cases where {{text}} contains additional preset variables
   for (let i = 0; i < depth; i++) {
     try {
       const variables = Object.fromEntries(
@@ -154,9 +193,9 @@ export const parsePlaceholderVariables = (text: string, depth = 2): string => {
 };
 
 /**
- * 解析消息内容，替换占位符变量
- * @param messages 原始消息数组
- * @returns 处理后的消息数组
+ * Parse message content, replace placeholder variables
+ * @param messages Original message array
+ * @returns Processed message array
  */
 export const parsePlaceholderVariablesMessages = (messages: any[]): any[] =>
   messages.map((message) => {
@@ -164,12 +203,12 @@ export const parsePlaceholderVariablesMessages = (messages: any[]): any[] =>
 
     const { content } = message;
 
-    // 字符串类型直接处理
+    // Process string type directly
     if (typeof content === 'string') {
       return { ...message, content: parsePlaceholderVariables(content) };
     }
 
-    // 数组类型处理其中的 text 元素
+    // Process text elements in array type
     if (Array.isArray(content)) {
       return {
         ...message,

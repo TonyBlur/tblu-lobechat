@@ -69,8 +69,12 @@ export class MacOSMenu extends BaseMenuPlatform implements IMenuPlatform {
         label: appName,
         submenu: [
           {
+            click: async () => {
+              const mainWindow = this.app.browserManager.getMainWindow();
+              mainWindow.show();
+              mainWindow.broadcast('navigate', { path: '/settings/about' });
+            },
             label: t('macOS.about', { appName }),
-            role: 'about',
           },
           {
             click: () => {
@@ -81,8 +85,10 @@ export class MacOSMenu extends BaseMenuPlatform implements IMenuPlatform {
           { type: 'separator' },
           {
             accelerator: 'Command+,',
-            click: () => {
-              this.app.browserManager.showSettingsWindow();
+            click: async () => {
+              const mainWindow = this.app.browserManager.getMainWindow();
+              mainWindow.show();
+              mainWindow.broadcast('navigate', { path: '/settings' });
             },
             label: t('macOS.preferences'),
           },
@@ -196,7 +202,7 @@ export class MacOSMenu extends BaseMenuPlatform implements IMenuPlatform {
                 // Optionally show an error dialog to the user
               });
             },
-            label: '打开日志目录',
+            label: t('help.openLogsDir'),
           },
           {
             click: () => {
@@ -207,7 +213,7 @@ export class MacOSMenu extends BaseMenuPlatform implements IMenuPlatform {
                 // Optionally show an error dialog to the user
               });
             },
-            label: '配置目录',
+            label: t('help.openConfigDir'),
           },
         ],
       },
@@ -237,7 +243,7 @@ export class MacOSMenu extends BaseMenuPlatform implements IMenuPlatform {
                 console.error(`[Menu] Error opening path ${userDataPath}:`, err);
               });
             },
-            label: '用户配置目录',
+            label: t('dev.openUserDataDir'),
           },
           {
             click: () => {
@@ -249,35 +255,35 @@ export class MacOSMenu extends BaseMenuPlatform implements IMenuPlatform {
                 console.error(`[Menu] Error opening path ${updaterCachePath}:`, err);
               });
             },
-            label: '更新缓存目录',
+            label: t('dev.openUpdaterCacheDir'),
           },
           {
             click: () => {
               this.app.storeManager.openInEditor();
             },
-            label: '打开 Settings 配置文件',
+            label: t('dev.openSettingsFile'),
           },
           { type: 'separator' },
           {
-            label: '自动更新测试模拟',
+            label: t('dev.updaterSimulation'),
             submenu: [
               {
                 click: () => {
                   this.app.updaterManager.simulateUpdateAvailable();
                 },
-                label: '模拟启动后台自动下载更新（3s 下完）',
+                label: t('dev.simulateAutoDownload'),
               },
               {
                 click: () => {
                   this.app.updaterManager.simulateDownloadProgress();
                 },
-                label: '模拟下载进度',
+                label: t('dev.simulateDownloadProgress'),
               },
               {
                 click: () => {
                   this.app.updaterManager.simulateUpdateDownloaded();
                 },
-                label: '模拟下载完成',
+                label: t('dev.simulateDownloadComplete'),
               },
             ],
           },
@@ -337,7 +343,11 @@ export class MacOSMenu extends BaseMenuPlatform implements IMenuPlatform {
         label: t('tray.show', { appName }),
       },
       {
-        click: () => this.app.browserManager.retrieveByIdentifier('settings').show(),
+        click: async () => {
+          const mainWindow = this.app.browserManager.getMainWindow();
+          mainWindow.show();
+          mainWindow.broadcast('navigate', { path: '/settings' });
+        },
         label: t('file.preferences'),
       },
       { type: 'separator' },

@@ -9,8 +9,8 @@ import { authedProcedure, publicProcedure, router } from '@/libs/trpc/lambda';
 import { serverDatabase } from '@/libs/trpc/lambda/middleware';
 import { AgentChatConfigSchema } from '@/types/agent';
 import { LobeMetaDataSchema } from '@/types/meta';
-import { BatchTaskResult } from '@/types/service';
-import { ChatSessionList, LobeGroupSession } from '@/types/session';
+import { type BatchTaskResult } from '@/types/service';
+import { type ChatSessionList, type LobeGroupSession } from '@/types/session';
 
 const sessionProcedure = authedProcedure.use(serverDatabase).use(async (opts) => {
   const { ctx } = opts;
@@ -97,14 +97,17 @@ export const sessionRouter = router({
     }),
 
   getGroupedSessions: publicProcedure.query(async ({ ctx }): Promise<ChatSessionList> => {
-    if (!ctx.userId) return { sessionGroups: [], sessions: [] };
+    const userId = ctx.userId;
+    if (!userId) return { sessionGroups: [], sessions: [] };
 
     const serverDB = await getServerDB();
-    const sessionModel = new SessionModel(serverDB, ctx.userId!);
-    const chatGroupModel = new ChatGroupModel(serverDB, ctx.userId!);
+    const sessionModel = new SessionModel(serverDB, userId);
+    const chatGroupModel = new ChatGroupModel(serverDB, userId);
 
-    const { sessions, sessionGroups } = await sessionModel.queryWithGroups();
-    const chatGroups = await chatGroupModel.queryWithMemberDetails();
+    const [{ sessions, sessionGroups }, chatGroups] = await Promise.all([
+      sessionModel.queryWithGroups(),
+      chatGroupModel.queryWithMemberDetails(),
+    ]);
 
     const groupSessions: LobeGroupSession[] = chatGroups.map((group) => {
       const { title, description, avatar, backgroundColor, groupId, ...rest } = group;

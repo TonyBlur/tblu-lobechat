@@ -1,12 +1,29 @@
 import { DBMessageItem, TopicRankItem } from '@lobechat/types';
-import { and, count, desc, eq, gt, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
+import {
+  SQL,
+  and,
+  count,
+  desc,
+  eq,
+  gt,
+  gte,
+  ilike,
+  inArray,
+  isNull,
+  lte,
+  ne,
+  not,
+  or,
+  sql,
+} from 'drizzle-orm';
 
-import { TopicItem, messages, topics } from '../schemas';
+import { TopicItem, agents, agentsToSessions, messages, topics } from '../schemas';
 import { LobeChatDatabase } from '../type';
 import { genEndDateWhere, genRangeWhere, genStartDateWhere, genWhere } from '../utils/genWhere';
 import { idGenerator } from '../utils/idGenerator';
 
 export interface CreateTopicParams {
+  agentId?: string | null;
   favorite?: boolean;
   groupId?: string | null;
   messages?: string[];
@@ -15,9 +32,28 @@ export interface CreateTopicParams {
 }
 
 interface QueryTopicParams {
-  containerId?: string | null; // sessionId or groupId
+  agentId?: string | null;
+  /**
+   * @deprecated Use agentId or groupId instead. Kept for backward compatibility.
+   * Container ID (sessionId or groupId) to filter topics by
+   */
+  containerId?: string | null;
   current?: number;
+  /**
+   * Group ID to filter topics by
+   */
+  groupId?: string | null;
+  /**
+   * Whether this is an inbox agent query.
+   * When true, also includes legacy inbox topics (sessionId IS NULL AND groupId IS NULL AND agentId IS NULL)
+   */
+  isInbox?: boolean;
   pageSize?: number;
+}
+
+export interface ListTopicsForMemoryExtractorCursor {
+  createdAt: Date;
+  id: string;
 }
 
 export class TopicModel {
@@ -30,27 +66,142 @@ export class TopicModel {
   }
   // **************** Query *************** //
 
-  query = async ({ current = 0, pageSize = 9999, containerId }: QueryTopicParams = {}) => {
+  query = async ({
+    agentId,
+    containerId,
+    current = 0,
+    pageSize = 9999,
+    groupId,
+    isInbox,
+  }: QueryTopicParams = {}) => {
     const offset = current * pageSize;
-    return (
+
+    // If groupId is provided, query topics by groupId directly
+    if (groupId) {
+      const whereCondition = and(eq(topics.userId, this.userId), eq(topics.groupId, groupId));
+
+      const [items, totalResult] = await Promise.all([
+        this.db
+          .select({
+            createdAt: topics.createdAt,
+            favorite: topics.favorite,
+            historySummary: topics.historySummary,
+            id: topics.id,
+            metadata: topics.metadata,
+            title: topics.title,
+            updatedAt: topics.updatedAt,
+          })
+          .from(topics)
+          .where(whereCondition)
+          .orderBy(desc(topics.favorite), desc(topics.updatedAt))
+          .limit(pageSize)
+          .offset(offset),
+        this.db
+          .select({ count: count(topics.id) })
+          .from(topics)
+          .where(whereCondition),
+      ]);
+
+      return { items, total: totalResult[0].count };
+    }
+
+    // If agentId is provided, query topics that match either:
+    // 1. topics.agentId = agentId (new data with agentId stored directly)
+    // 2. topics.sessionId = associated sessionId (legacy data via agentsToSessions lookup)
+    // 3. For inbox: sessionId IS NULL AND groupId IS NULL AND agentId IS NULL (legacy inbox data)
+    if (agentId) {
+      // Get the associated sessionId for backward compatibility with legacy data
+      const agentSession = await this.db
+        .select({ sessionId: agentsToSessions.sessionId })
+        .from(agentsToSessions)
+        .where(and(eq(agentsToSessions.agentId, agentId), eq(agentsToSessions.userId, this.userId)))
+        .limit(1);
+
+      const associatedSessionId = agentSession[0]?.sessionId;
+
+      // Build condition to match both new (agentId) and legacy (sessionId) data
+      let agentCondition;
+      if (isInbox) {
+        // For inbox agent: query topics that match:
+        // 1. topics.agentId = agentId (new data)
+        // 2. topics.sessionId = associatedSessionId (legacy data with session relation)
+        // 3. sessionId IS NULL AND groupId IS NULL AND agentId IS NULL (very old legacy inbox data)
+        const conditions = [
+          eq(topics.agentId, agentId),
+          and(isNull(topics.sessionId), isNull(topics.groupId), isNull(topics.agentId)),
+        ];
+        // Also include topics linked via legacy session relation
+        if (associatedSessionId) {
+          conditions.push(eq(topics.sessionId, associatedSessionId));
+        }
+        agentCondition = or(...conditions);
+      } else if (associatedSessionId) {
+        agentCondition = or(eq(topics.agentId, agentId), eq(topics.sessionId, associatedSessionId));
+      } else {
+        agentCondition = eq(topics.agentId, agentId);
+      }
+
+      // Fetch items and total count in parallel
+      // Include sessionId and agentId for migration detection
+      const [items, totalResult] = await Promise.all([
+        this.db
+          .select({
+            createdAt: topics.createdAt,
+            favorite: topics.favorite,
+            historySummary: topics.historySummary,
+            id: topics.id,
+            metadata: topics.metadata,
+            title: topics.title,
+            updatedAt: topics.updatedAt,
+          })
+          .from(topics)
+          .where(and(eq(topics.userId, this.userId), agentCondition))
+          .orderBy(desc(topics.favorite), desc(topics.updatedAt))
+          .limit(pageSize)
+          .offset(offset),
+        this.db
+          .select({ count: count(topics.id) })
+          .from(topics)
+          .where(and(eq(topics.userId, this.userId), agentCondition)),
+      ]);
+
+      return { items, total: totalResult[0].count };
+    }
+
+    // Fallback to containerId-based query (backward compatibility)
+    const whereCondition = and(eq(topics.userId, this.userId), this.matchContainer(containerId));
+
+    const [items, totalResult] = await Promise.all([
       this.db
         .select({
+          agentId: topics.agentId,
           createdAt: topics.createdAt,
           favorite: topics.favorite,
           historySummary: topics.historySummary,
           id: topics.id,
           metadata: topics.metadata,
+          sessionId: topics.sessionId,
           title: topics.title,
           updatedAt: topics.updatedAt,
         })
         .from(topics)
-        .where(and(eq(topics.userId, this.userId), this.matchContainer(containerId)))
+        .where(whereCondition)
         // In boolean sorting, false is considered "smaller" than true.
         // So here we use desc to ensure that topics with favorite as true are in front.
         .orderBy(desc(topics.favorite), desc(topics.updatedAt))
         .limit(pageSize)
-        .offset(offset)
-    );
+        .offset(offset),
+      this.db
+        .select({ count: count(topics.id) })
+        .from(topics)
+        .where(whereCondition),
+    ]);
+
+    // Remove internal fields before returning
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const cleanItems = items.map(({ agentId, sessionId, ...rest }) => rest);
+
+    return { items: cleanItems, total: totalResult[0].count };
   };
 
   findById = async (id: string) => {
@@ -72,7 +223,7 @@ export class TopicModel {
 
     const keywordLowerCase = keyword.toLowerCase();
 
-    // 查询标题匹配的主题
+    // Query topics matching by title
     const topicsByTitle = await this.db.query.topics.findMany({
       orderBy: [desc(topics.updatedAt)],
       where: and(
@@ -82,7 +233,7 @@ export class TopicModel {
       ),
     });
 
-    // 查询消息内容匹配的主题ID
+    // Query topic IDs matching by message content
     const topicIdsByMessages = await this.db
       .select({ topicId: messages.topicId })
       .from(messages)
@@ -96,19 +247,22 @@ export class TopicModel {
         ),
       )
       .groupBy(messages.topicId);
-    // 如果没有通过消息内容找到主题，直接返回标题匹配的主题
+    // If no topics found by message content, return topics matching by title
     if (topicIdsByMessages.length === 0) {
       return topicsByTitle;
     }
 
-    // 查询通过消息内容找到的主题
-    const topicIds = topicIdsByMessages.map((t) => t.topicId);
+    // Query topics found by message content
+    const topicIds = topicIdsByMessages
+      .map((t) => t.topicId)
+      .filter((id): id is string => id !== null);
+
     const topicsByMessages = await this.db.query.topics.findMany({
       orderBy: [desc(topics.updatedAt)],
       where: and(eq(topics.userId, this.userId), inArray(topics.id, topicIds)),
     });
 
-    // 合并结果并去重
+    // Merge results and deduplicate
     const allTopics = [...topicsByTitle];
     const existingIds = new Set(topicsByTitle.map((t) => t.id));
 
@@ -118,16 +272,41 @@ export class TopicModel {
       }
     }
 
-    // 按更新时间排序
+    // Sort by update time
     return allTopics.sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     );
   };
   count = async (params?: {
+    agentId?: string;
+    containerId?: string | null;
     endDate?: string;
     range?: [string, string];
     startDate?: string;
   }): Promise<number> => {
+    // Build agent-specific condition if agentId is provided
+    let agentCondition: SQL | undefined;
+    if (params?.agentId) {
+      // Get the associated sessionId for backward compatibility with legacy data
+      const agentSession = await this.db
+        .select({ sessionId: agentsToSessions.sessionId })
+        .from(agentsToSessions)
+        .where(
+          and(
+            eq(agentsToSessions.agentId, params.agentId),
+            eq(agentsToSessions.userId, this.userId),
+          ),
+        )
+        .limit(1);
+
+      const associatedSessionId = agentSession[0]?.sessionId;
+
+      // Build condition to match both new (agentId) and legacy (sessionId) data
+      agentCondition = associatedSessionId
+        ? or(eq(topics.agentId, params.agentId), eq(topics.sessionId, associatedSessionId))
+        : eq(topics.agentId, params.agentId);
+    }
+
     const result = await this.db
       .select({
         count: count(topics.id),
@@ -136,6 +315,8 @@ export class TopicModel {
       .where(
         genWhere([
           eq(topics.userId, this.userId),
+          agentCondition,
+          params?.containerId ? this.matchContainer(params.containerId) : undefined,
           params?.range
             ? genRangeWhere(params.range, topics.createdAt, (date) => date.toDate())
             : undefined,
@@ -168,6 +349,47 @@ export class TopicModel {
       .limit(limit);
   };
 
+  /**
+   * Query recent topics for homepage display.
+   * Returns basic topic info with agentId/groupId for later resolution.
+   * - For agent topics: excludes virtual agents (except inbox)
+   * - For group topics: includes topics with groupId
+   * - For inbox: includes topics with slug='inbox'
+   */
+  queryRecent = async (limit: number = 12) => {
+    const result = await this.db
+      .select({
+        agentId: topics.agentId,
+        groupId: topics.groupId,
+        id: topics.id,
+        sessionId: topics.sessionId,
+        title: topics.title,
+        updatedAt: topics.updatedAt,
+      })
+      .from(topics)
+      .leftJoin(agents, eq(topics.agentId, agents.id))
+      .where(
+        and(
+          eq(topics.userId, this.userId),
+          or(
+            // Group topics: has groupId
+            not(isNull(topics.groupId)),
+            // Inbox agent topics
+            eq(agents.slug, 'inbox'),
+            // Agent topics: exclude virtual agents
+            and(isNull(topics.groupId), ne(agents.virtual, true)),
+          ),
+        ),
+      )
+      .orderBy(desc(topics.updatedAt))
+      .limit(limit);
+
+    return result.map((item) => ({
+      ...item,
+      type: item.groupId ? ('group' as const) : ('agent' as const),
+    }));
+  };
+
   // **************** Create *************** //
 
   create = async (
@@ -177,6 +399,7 @@ export class TopicModel {
     return this.db.transaction(async (tx) => {
       const insertData = {
         ...params,
+        agentId: params.agentId || null,
         groupId: params.groupId || null,
         id,
         sessionId: params.sessionId || null,
@@ -199,13 +422,14 @@ export class TopicModel {
   };
 
   batchCreate = async (topicParams: (CreateTopicParams & { id?: string })[]) => {
-    // 开始一个事务
+    // Start a transaction
     return this.db.transaction(async (tx) => {
-      // 在 topics 表中批量插入新的 topics
+      // Batch insert new topics into the topics table
       const createdTopics = await tx
         .insert(topics)
         .values(
           topicParams.map((params) => ({
+            agentId: params.agentId || null,
             favorite: params.favorite,
             groupId: params.sessionId ? null : params.groupId,
             id: params.id || this.genId(),
@@ -216,7 +440,7 @@ export class TopicModel {
         )
         .returning();
 
-      // 对每个新创建的 topic,更新关联的 messages 的 topicId
+      // For each newly created topic, update the topicId of associated messages
       await Promise.all(
         createdTopics.map(async (topic, index) => {
           const messageIds = topicParams[index].messages;
@@ -255,7 +479,7 @@ export class TopicModel {
         })
         .returning();
 
-      // 查找与原始 topic 关联的 messages
+      // Find messages associated with the original topic
       const originalMessages = await tx
         .select()
         .from(messages)
@@ -313,6 +537,30 @@ export class TopicModel {
   };
 
   /**
+   * Deletes multiple topics based on the agentId.
+   * This will delete topics that have either:
+   * 1. Direct agentId match (new data)
+   * 2. SessionId match via agentsToSessions lookup (legacy data)
+   */
+  batchDeleteByAgentId = async (agentId: string) => {
+    // Get the associated sessionId for backward compatibility with legacy data
+    const agentSession = await this.db
+      .select({ sessionId: agentsToSessions.sessionId })
+      .from(agentsToSessions)
+      .where(and(eq(agentsToSessions.agentId, agentId), eq(agentsToSessions.userId, this.userId)))
+      .limit(1);
+
+    const associatedSessionId = agentSession[0]?.sessionId;
+
+    // Build condition to match both new (agentId) and legacy (sessionId) data
+    const agentCondition = associatedSessionId
+      ? or(eq(topics.agentId, agentId), eq(topics.sessionId, associatedSessionId))
+      : eq(topics.agentId, agentId);
+
+    return this.db.delete(topics).where(and(eq(topics.userId, this.userId), agentCondition));
+  };
+
+  /**
    * Deletes multiple topics and all messages associated with them in a transaction.
    */
   batchDelete = async (ids: string[]) => {
@@ -349,5 +597,48 @@ export class TopicModel {
     if (containerId) return or(eq(topics.sessionId, containerId), eq(topics.groupId, containerId));
     // If neither is provided, match topics with no session or group
     return and(isNull(topics.sessionId), isNull(topics.groupId));
+  };
+
+  listTopicsForMemoryExtractor = async (
+    options: {
+      cursor?: ListTopicsForMemoryExtractorCursor;
+      endDate?: Date;
+      ignoreExtracted?: boolean;
+      limit?: number;
+      startDate?: Date;
+    } = {},
+  ) => {
+    const cursorCondition = options.cursor
+      ? and(
+          ne(topics.id, options.cursor.id),
+          or(
+            gt(topics.createdAt, options.cursor.createdAt),
+            and(eq(topics.createdAt, options.cursor.createdAt), gt(topics.id, options.cursor.id)),
+          ),
+        )
+      : undefined;
+
+    return this.db.query.topics.findMany({
+      columns: {
+        createdAt: true,
+        id: true,
+        metadata: true,
+        userId: true,
+      },
+      limit: options.limit,
+      orderBy: (fields, { asc }) => [asc(fields.createdAt), asc(fields.id)],
+      where: and(
+        eq(topics.userId, this.userId),
+        options.startDate ? gte(topics.createdAt, options.startDate) : undefined,
+        options.endDate ? lte(topics.createdAt, options.endDate) : undefined,
+        options.ignoreExtracted
+          ? undefined
+          : or(
+              isNull(topics.metadata),
+              sql`(${topics.metadata}->'memory_user_memory_extract'->>'extract_status') IS DISTINCT FROM 'completed'`,
+            ),
+        cursorCondition,
+      ),
+    });
   };
 }

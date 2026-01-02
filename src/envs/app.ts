@@ -2,8 +2,6 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
 
-import { isServerMode } from '@/const/version';
-
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
@@ -16,12 +14,17 @@ const isInVercel = process.env.VERCEL === '1';
 
 const vercelUrl = `https://${process.env.VERCEL_URL}`;
 
-const APP_URL = process.env.APP_URL ? process.env.APP_URL : isInVercel ? vercelUrl : undefined;
+const APP_URL = process.env.APP_URL
+  ? process.env.APP_URL
+  : isInVercel
+    ? vercelUrl
+    : process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3010'
+      : 'http://localhost:3210';
 
-// only throw error in server mode and server side
-if (typeof window === 'undefined' && isServerMode && !APP_URL) {
-  throw new Error('`APP_URL` is required in server mode');
-}
+// INTERNAL_APP_URL is used for server-to-server calls to bypass CDN/proxy
+// Falls back to APP_URL if not set
+const INTERNAL_APP_URL = process.env.INTERNAL_APP_URL || APP_URL;
 
 const ASSISTANT_INDEX_URL = 'https://registry.npmmirror.com/@lobehub/agents-index/v1/files/public';
 
@@ -36,7 +39,6 @@ export const getAppConfig = () => {
     },
     server: {
       ACCESS_CODES: z.any(z.string()).optional(),
-
       AGENTS_INDEX_URL: z.string().url(),
 
       DEFAULT_AGENT_CONFIG: z.string(),
@@ -45,7 +47,8 @@ export const getAppConfig = () => {
       PLUGINS_INDEX_URL: z.string().url(),
       PLUGIN_SETTINGS: z.string().optional(),
 
-      APP_URL: z.string().optional(),
+      APP_URL: z.string(),
+      INTERNAL_APP_URL: z.string().optional(),
       VERCEL_EDGE_CONFIG: z.string().optional(),
       MIDDLEWARE_REWRITE_THROUGH_LOCAL: z.boolean().optional(),
       ENABLE_AUTH_PROTECTION: z.boolean().optional(),
@@ -57,6 +60,28 @@ export const getAppConfig = () => {
       SSRF_ALLOW_PRIVATE_IP_ADDRESS: z.boolean().optional(),
       SSRF_ALLOW_IP_ADDRESS_LIST: z.string().optional(),
       MARKET_BASE_URL: z.string().optional(),
+
+      /**
+       * Trusted Client Secret for Market API authentication
+       * 64-character hex string (32 bytes) shared with Market server
+       * Used to encrypt user payload for trusted client authentication
+       * Generate with: openssl rand -hex 32
+       */
+      MARKET_TRUSTED_CLIENT_SECRET: z.string().length(83).optional(),
+      /**
+       * Trusted Client ID for Market API authentication
+       * Must be registered in Market's TRUSTED_CLIENT_IDS whitelist
+       * e.g., "lobechat-com", "lobehub-desktop"
+       */
+      MARKET_TRUSTED_CLIENT_ID: z.string().optional(),
+
+      /**
+       * Enable Queue-based Agent Runtime
+       * When true, use QStash for async agent execution (production)
+       * When false, execute agent steps synchronously in current process (development)
+       * @default false
+       */
+      enableQueueAgentRuntime: z.boolean().optional(),
     },
     runtimeEnv: {
       // Sentry
@@ -80,6 +105,7 @@ export const getAppConfig = () => {
       VERCEL_EDGE_CONFIG: process.env.VERCEL_EDGE_CONFIG,
 
       APP_URL,
+      INTERNAL_APP_URL,
       MIDDLEWARE_REWRITE_THROUGH_LOCAL: process.env.MIDDLEWARE_REWRITE_THROUGH_LOCAL === '1',
       ENABLE_AUTH_PROTECTION: process.env.ENABLE_AUTH_PROTECTION === '1',
 
@@ -90,6 +116,11 @@ export const getAppConfig = () => {
       SSRF_ALLOW_PRIVATE_IP_ADDRESS: process.env.SSRF_ALLOW_PRIVATE_IP_ADDRESS === '1',
       SSRF_ALLOW_IP_ADDRESS_LIST: process.env.SSRF_ALLOW_IP_ADDRESS_LIST,
       MARKET_BASE_URL: process.env.MARKET_BASE_URL,
+
+      MARKET_TRUSTED_CLIENT_SECRET: process.env.MARKET_TRUSTED_CLIENT_SECRET,
+      MARKET_TRUSTED_CLIENT_ID: process.env.MARKET_TRUSTED_CLIENT_ID,
+
+      enableQueueAgentRuntime: process.env.AGENT_RUNTIME_MODE === 'queue',
     },
   });
 };

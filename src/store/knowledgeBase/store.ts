@@ -1,14 +1,14 @@
 import { shallow } from 'zustand/shallow';
 import { createWithEqualityFn } from 'zustand/traditional';
-import { StateCreator } from 'zustand/vanilla';
+import { type StateCreator } from 'zustand/vanilla';
 
 import { createDevtools } from '../middleware/createDevtools';
-import { KnowledgeBaseStoreState, initialState } from './initialState';
-import { KnowledgeBaseContentAction, createContentSlice } from './slices/content';
-import { KnowledgeBaseCrudAction, createCrudSlice } from './slices/crud';
-import { RAGEvalAction, createRagEvalSlice } from './slices/ragEval';
+import { type KnowledgeBaseStoreState, initialState } from './initialState';
+import { type KnowledgeBaseContentAction, createContentSlice } from './slices/content';
+import { type KnowledgeBaseCrudAction, createCrudSlice } from './slices/crud';
+import { type RAGEvalAction, createRagEvalSlice } from './slices/ragEval';
 
-//  ===============  聚合 createStoreFn ============ //
+//  ===============  Aggregate createStoreFn ============ //
 
 export interface KnowledgeBaseStore
   extends KnowledgeBaseStoreState,
@@ -27,7 +27,7 @@ const createStore: StateCreator<KnowledgeBaseStore, [['zustand/devtools', never]
   ...createRagEvalSlice(...parameters),
 });
 
-//  ===============  实装 useStore ============ //
+//  ===============  Implement useStore ============ //
 const devtools = createDevtools('knowledgeBase');
 
 export const useKnowledgeBaseStore = createWithEqualityFn<KnowledgeBaseStore>()(

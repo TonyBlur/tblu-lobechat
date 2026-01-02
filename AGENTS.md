@@ -2,17 +2,20 @@
 
 This document serves as a comprehensive guide for all team members when developing LobeChat.
 
+## Project Description
+
+You are developing an open-source, modern-design AI Agent Workspace: LobeHub(previous LobeChat).
+
 ## Tech Stack
 
 Built with modern technologies:
 
-- **Frontend**: Next.js 15, React 19, TypeScript
+- **Frontend**: Next.js 16, React 19, TypeScript
 - **UI Components**: Ant Design, @lobehub/ui, antd-style
 - **State Management**: Zustand, SWR
 - **Database**: PostgreSQL, PGLite, Drizzle ORM
 - **Testing**: Vitest, Testing Library
 - **Package Manager**: pnpm (monorepo structure)
-- **Build Tools**: Next.js (Turbopack in dev, Webpack in prod)
 
 ## Directory Structure
 
@@ -23,11 +26,13 @@ The project follows a well-organized monorepo structure:
 - `src/` - Main source code
 - `docs/` - Documentation
 - `.cursor/rules/` - Development rules and guidelines
+- PR titles starting with `✨ feat/` or `🐛 fix` will trigger the release workflow upon merge. Only use these prefixes for significant user-facing feature changes or bug fixes
 
 ## Development Workflow
 
 ### Git Workflow
 
+- The current release branch is `next` instead of `main` until v2.0.0 is officially released
 - Use rebase for git pull
 - Git commit messages should prefix with gitmoji
 - Git branch name format: `username/feat/feature-name`
@@ -38,7 +43,6 @@ The project follows a well-organized monorepo structure:
 - Use `pnpm` as the primary package manager
 - Use `bun` to run npm scripts
 - Use `bunx` to run executable npm packages
-- Navigate to specific packages using `cd packages/<package-name>`
 
 ### Code Style Guidelines
 
@@ -80,10 +84,10 @@ All following rules are saved under `.cursor/rules/` directory:
 
 ### Frontend
 
-- `react-component.mdc` – React component style guide and conventions
+- `react.mdc` – React component style guide and conventions
 - `i18n.mdc` – Internationalization guide using react-i18next
 - `typescript.mdc` – TypeScript code style guide
-- `packages/react-layout-kit.mdc` – Usage guide for react-layout-kit
+- `packages/react-layout-kit.mdc` – Usage guide for Flexbox and Center components from @lobehub/ui
 
 ### State Management
 

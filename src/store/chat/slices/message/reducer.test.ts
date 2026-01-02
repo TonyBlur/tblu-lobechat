@@ -1,4 +1,5 @@
 import { ChatToolPayload, UIChatMessage } from '@lobechat/types';
+import i18n from 'i18next';
 
 import { MessageDispatch, messagesReducer } from './reducer';
 
@@ -13,7 +14,6 @@ describe('messagesReducer', () => {
         createdAt: 1629264000000,
         updatedAt: 1629264000000,
         role: 'user',
-        meta: {},
       },
       {
         id: 'message2',
@@ -21,7 +21,6 @@ describe('messagesReducer', () => {
         createdAt: 1629264000000,
         updatedAt: 1629264000000,
         role: 'assistant',
-        meta: {},
         tools: [
           { identifier: 'tool1', apiName: 'calculator', id: 'abc', type: 'default', arguments: '' },
         ],
@@ -56,18 +55,6 @@ describe('messagesReducer', () => {
 
       expect(newState).toEqual(initialState);
     });
-
-    it('should not modify the state if the specified message does not exist', () => {
-      const payload: MessageDispatch = {
-        type: 'updateMessage',
-        id: 'nonexistentMessage',
-        value: { content: 'Updated Message' },
-      };
-
-      const newState = messagesReducer(initialState, payload);
-
-      expect(newState).toEqual(initialState);
-    });
   });
 
   describe('unimplemented type', () => {
@@ -76,7 +63,7 @@ describe('messagesReducer', () => {
       const payload: MessageDispatch = { type: 'unimplementedType' };
 
       expect(() => messagesReducer(initialState, payload)).toThrowError(
-        '暂未实现的 type，请检查 reducer',
+        i18n.t('errors.unimplementedType', { ns: 'common' }),
       );
     });
   });
@@ -113,7 +100,6 @@ describe('messagesReducer', () => {
             createdAt: 1629264000000,
             updatedAt: 1629264000000,
             role: 'user',
-            meta: {},
             extra: { abc: '1' },
           } as UIChatMessage,
           ...initialState,
@@ -132,6 +118,54 @@ describe('messagesReducer', () => {
         id: 'nonexistent',
         key: 'testKey',
         value: 'testValue',
+      };
+
+      const newState = messagesReducer(initialState, payload);
+      expect(newState).toEqual(initialState);
+    });
+  });
+
+  describe('updateMessageMetadata', () => {
+    it('should merge update the metadata field of a message', () => {
+      const payload: MessageDispatch = {
+        type: 'updateMessageMetadata',
+        id: 'message1',
+        value: { activeBranchIndex: 1 },
+      };
+
+      const newState = messagesReducer(initialState, payload);
+      const updatedMessage = newState.find((m) => m.id === 'message1');
+
+      expect(updatedMessage?.metadata).toEqual({ activeBranchIndex: 1 });
+      expect(updatedMessage?.updatedAt).toBeGreaterThan(initialState[0].updatedAt);
+    });
+
+    it('should merge update the metadata field if metadata already exists', () => {
+      const state = [
+        {
+          ...initialState[0],
+          metadata: { activeBranchIndex: 0 },
+        },
+      ];
+
+      const payload: MessageDispatch = {
+        type: 'updateMessageMetadata',
+        id: 'message1',
+        value: { activeBranchIndex: 2 },
+      };
+
+      const newState = messagesReducer(state, payload);
+      const updatedMessage = newState.find((m) => m.id === 'message1');
+
+      expect(updatedMessage?.metadata).toEqual({ activeBranchIndex: 2 });
+      expect(updatedMessage?.updatedAt).toBeGreaterThan(initialState[0].updatedAt);
+    });
+
+    it('should not modify state if message is not found', () => {
+      const payload: MessageDispatch = {
+        type: 'updateMessageMetadata',
+        id: 'nonexistent',
+        value: { activeBranchIndex: 1 },
       };
 
       const newState = messagesReducer(initialState, payload);
@@ -195,7 +229,6 @@ describe('messagesReducer', () => {
         content: 'Tool content',
         createdAt: 1629264000000,
         updatedAt: 1629264000000,
-        meta: {},
         plugin: {
           identifier: 'tool1',
           apiName: 'calculator',
@@ -450,7 +483,6 @@ describe('messagesReducer', () => {
       expect(newMessage?.role).toBe('user');
       expect(newMessage?.createdAt).toBeDefined();
       expect(newMessage?.updatedAt).toBeDefined();
-      expect(newMessage?.meta).toEqual({});
     });
   });
 

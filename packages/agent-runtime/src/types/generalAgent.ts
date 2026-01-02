@@ -1,0 +1,101 @@
+import { ChatToolPayload, MessageToolCall } from '@lobechat/types';
+
+export interface GeneralAgentCallLLMInstructionPayload {
+  isFirstMessage?: boolean;
+  messages: any[];
+  model: string;
+  parentMessageId?: string;
+  provider: string;
+  tools: any[];
+}
+
+export interface GeneralAgentCallLLMResultPayload {
+  hasToolsCalling: boolean;
+  parentMessageId: string;
+  result: { content: string; tool_calls: MessageToolCall[] };
+  toolsCalling: ChatToolPayload[];
+}
+
+export interface GeneralAgentCallingToolInstructionPayload {
+  parentMessageId: string;
+  skipCreateToolMessage?: boolean;
+  toolCalling: ChatToolPayload;
+}
+
+export interface GeneralAgentCallToolResultPayload {
+  data: any;
+  executionTime: number;
+  isSuccess: boolean;
+  parentMessageId: string;
+  /** Whether tool requested to stop execution (e.g., group management speak/delegate, GTD async tasks) */
+  stop?: boolean;
+  toolCall: ChatToolPayload;
+  toolCallId: string;
+}
+
+export interface GeneralAgentCallToolsBatchInstructionPayload {
+  parentMessageId: string;
+  toolsCalling: ChatToolPayload[];
+}
+
+export interface GeneralAgentCallToolsBatchResultPayload {
+  parentMessageId: string;
+  toolCount: number;
+  toolResults: GeneralAgentCallToolResultPayload[];
+}
+
+export interface GeneralAgentHumanAbortPayload {
+  /** Whether there are pending tool calls */
+  hasToolsCalling?: boolean;
+  /** Parent message ID (assistant message) */
+  parentMessageId: string;
+  /** Reason for the abort */
+  reason: string;
+  /** LLM result including content and tool_calls */
+  result?: {
+    content: string;
+    tool_calls?: any[];
+  };
+  /** Pending tool calls that need to be cancelled */
+  toolsCalling?: ChatToolPayload[];
+}
+
+export interface GeneralAgentConfig {
+  agentConfig?: {
+    [key: string]: any;
+    maxSteps?: number;
+  };
+  /**
+   * Context compression configuration
+   * Note: Compression checking is always enabled to prevent context overflow.
+   * This config only controls the compression parameters.
+   */
+  compressionConfig?: {
+    /** Number of recent messages to keep uncompressed (default: 10) */
+    keepRecentCount?: number;
+    /** Model's max context window token count (default: 128k) */
+    maxWindowToken?: number;
+  };
+  modelRuntimeConfig?: {
+    model: string;
+    provider: string;
+  };
+  operationId: string;
+  userId?: string;
+}
+
+/**
+ * Payload for compression_result phase
+ */
+export interface GeneralAgentCompressionResultPayload {
+  /** Compressed messages (summary + pinned + recent) */
+  compressedMessages: any[];
+  /** Token count after compression */
+  compressedTokenCount: number;
+  /** Compression group ID in database */
+  groupId: string;
+  /** Token count before compression */
+  originalTokenCount: number;
+  /** Whether compression was skipped (no messages to compress) */
+  skipped?: boolean;
+}

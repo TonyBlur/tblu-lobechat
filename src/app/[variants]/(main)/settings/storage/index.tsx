@@ -1,17 +1,19 @@
-'use client';
+import { useTranslation } from 'react-i18next';
 
-import { isServerMode } from '@/const/version';
+import SettingHeader from '@/app/[variants]/(main)/settings/features/SettingHeader';
 
-import Advanced from './Advanced';
-import IndexedDBStorage from './IndexedDBStorage';
+import Advanced from './features/Advanced';
 
-const StorageEstimate = () => {
+const Page = () => {
+  const { t } = useTranslation('setting');
   return (
     <>
-      {!isServerMode && <IndexedDBStorage />}
+      <SettingHeader title={t('tab.storage')} />
       <Advanced />
     </>
   );
 };
 
-export default StorageEstimate;
+Page.displayName = 'StorageSetting';
+
+export default Page;

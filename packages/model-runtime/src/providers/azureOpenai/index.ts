@@ -43,7 +43,9 @@ export class LobeAzureOpenAI implements LobeRuntimeAI {
   baseURL: string;
 
   async chat(payload: ChatStreamPayload, options?: ChatMethodOptions) {
-    const { messages, model, ...params } = payload;
+    // Remove internal apiMode parameter to prevent sending to Azure OpenAI API
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { messages, model, apiMode: _, ...params } = payload;
     // o1 series models on Azure OpenAI does not support streaming currently
     const enableStreaming = model.includes('o1') ? false : (params.stream ?? true);
 
@@ -51,7 +53,8 @@ export class LobeAzureOpenAI implements LobeRuntimeAI {
       ...message,
       role:
         // Convert 'system' role to 'user' or 'developer' based on the model
-        (model.includes('o1') || model.includes('o3')) && message.role === 'system'
+        (model.includes('o1') || model.includes('o3') || model.includes('gpt-5')) &&
+        message.role === 'system'
           ? [...systemToUserModels].some((sub) => model.includes(sub))
             ? 'user'
             : 'developer'

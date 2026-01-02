@@ -1,6 +1,6 @@
-import { BaseDataModel } from '@/types/meta';
+import type { BaseDataModel } from '../meta';
 
-// 类型定义
+// Type definitions
 export type TimeGroupId =
   | 'today'
   | 'yesterday'
@@ -24,9 +24,20 @@ export interface GroupedTopic {
   title?: string;
 }
 
+export interface TopicUserMemoryExtractRunState {
+  error?: string;
+  lastMessageAt?: string;
+  lastRunAt?: string;
+  messageCount?: number;
+  processedMemoryCount?: number;
+  traceId?: string;
+}
+
 export interface ChatTopicMetadata {
   model?: string;
   provider?: string;
+  userMemoryExtractRunState?: TopicUserMemoryExtractRunState;
+  userMemoryExtractStatus?: 'pending' | 'completed' | 'failed';
 }
 
 export interface ChatTopicSummary {
@@ -50,4 +61,54 @@ export interface TopicRankItem {
   id: string;
   sessionId: string | null;
   title: string | null;
+}
+
+export interface RecentTopicAgent {
+  avatar: string | null;
+  backgroundColor: string | null;
+  id: string;
+  title: string | null;
+}
+
+export interface RecentTopicGroupMember {
+  avatar: string | null;
+  backgroundColor: string | null;
+}
+
+export interface RecentTopicGroup {
+  id: string;
+  members: RecentTopicGroupMember[];
+  title: string | null;
+}
+
+export interface RecentTopic {
+  agent: RecentTopicAgent | null;
+  group: RecentTopicGroup | null;
+  id: string;
+  title: string | null;
+  type: 'agent' | 'group';
+  updatedAt: Date;
+}
+
+export interface CreateTopicParams {
+  favorite?: boolean;
+  groupId?: string | null;
+  messages?: string[];
+  sessionId?: string | null;
+  title: string;
+}
+
+export interface QueryTopicParams {
+  agentId?: string | null;
+  current?: number;
+  /**
+   * Group ID to filter topics by
+   */
+  groupId?: string | null;
+  /**
+   * Whether this is an inbox agent query.
+   * When true, also includes legacy inbox topics (sessionId IS NULL AND groupId IS NULL AND agentId IS NULL)
+   */
+  isInbox?: boolean;
+  pageSize?: number;
 }

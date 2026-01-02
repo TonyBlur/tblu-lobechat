@@ -24,6 +24,7 @@ export enum AssistantSorts {
   CreatedAt = 'createdAt',
   Identifier = 'identifier',
   KnowledgeCount = 'knowledgeCount',
+  MyOwn = 'myown',
   PluginCount = 'pluginCount',
   Title = 'title',
   TokenUsage = 'tokenUsage',
@@ -34,7 +35,10 @@ export enum AssistantNavKey {
   Overview = 'overview',
   Related = 'related',
   SystemRole = 'systemRole',
+  Version = 'version',
 }
+
+export type AgentStatus = 'published' | 'unpublished' | 'archived' | 'deprecated';
 
 export interface DiscoverAssistantItem extends Omit<LobeAgentSettings, 'meta'>, MetaData {
   author: string;
@@ -42,19 +46,26 @@ export interface DiscoverAssistantItem extends Omit<LobeAgentSettings, 'meta'>, 
   createdAt: string;
   homepage: string;
   identifier: string;
+  installCount?: number;
   knowledgeCount: number;
   pluginCount: number;
+  status?: AgentStatus;
   tokenUsage: number;
+  userName?: string;
 }
+
+export type AssistantMarketSource = 'legacy' | 'new';
 
 export interface AssistantQueryParams {
   category?: string;
   locale?: string;
   order?: 'asc' | 'desc';
+  ownerId?: string;
   page?: number;
   pageSize?: number;
   q?: string;
   sort?: AssistantSorts;
+  source?: AssistantMarketSource;
 }
 
 export interface AssistantListResponse {
@@ -66,7 +77,18 @@ export interface AssistantListResponse {
 }
 
 export interface DiscoverAssistantDetail extends DiscoverAssistantItem {
+  currentVersion?: string;
+  editorData?: any;
   examples?: FewShots;
   related: DiscoverAssistantItem[];
   summary?: string;
+  versions?: DiscoverAssistantVersion[];
+}
+
+export interface DiscoverAssistantVersion {
+  createdAt?: string;
+  isLatest?: boolean;
+  isValidated?: boolean;
+  status?: AgentStatus;
+  version: string;
 }

@@ -1,14 +1,19 @@
-import { BatchTaskResult, UIChatMessage, UpdateMessageRAGParamsSchema } from '@lobechat/types';
+import {
+  CreateNewMessageParamsSchema,
+  UpdateMessageParamsSchema,
+  UpdateMessagePluginSchema,
+  UpdateMessageRAGParamsSchema,
+} from '@lobechat/types';
 import { z } from 'zod';
 
 import { MessageModel } from '@/database/models/message';
-import { updateMessagePluginSchema } from '@/database/schemas';
-import { getServerDB } from '@/database/server';
-import { authedProcedure, publicProcedure, router } from '@/libs/trpc/lambda';
+import { authedProcedure, router } from '@/libs/trpc/lambda';
 import { serverDatabase } from '@/libs/trpc/lambda/middleware';
 import { FileService } from '@/server/services/file';
+import { MessageService } from '@/server/services/message';
 
-type ChatMessageList = UIChatMessage[];
+import { resolveAgentIdFromSession, resolveContext } from './_helpers/resolveContext';
+import { basicContextSchema } from './_schema/context';
 
 const messageProcedure = authedProcedure.use(serverDatabase).use(async (opts) => {
   const { ctx } = opts;
@@ -17,17 +22,26 @@ const messageProcedure = authedProcedure.use(serverDatabase).use(async (opts) =>
     ctx: {
       fileService: new FileService(ctx.serverDB, ctx.userId),
       messageModel: new MessageModel(ctx.serverDB, ctx.userId),
+      messageService: new MessageService(ctx.serverDB, ctx.userId),
     },
   });
 });
 
 export const messageRouter = router({
-  batchCreateMessages: messageProcedure
-    .input(z.array(z.any()))
-    .mutation(async ({ input, ctx }): Promise<BatchTaskResult> => {
-      const data = await ctx.messageModel.batchCreate(input);
+  addFilesToMessage: messageProcedure
+    .input(
+      z
+        .object({
+          fileIds: z.array(z.string()),
+          id: z.string(),
+        })
+        .extend(basicContextSchema.shape),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { id, fileIds, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
 
-      return { added: data.rowCount as number, ids: [], skips: [], success: true };
+      return ctx.messageService.addFilesToMessage(id, fileIds, resolved);
     }),
 
   count: messageProcedure
@@ -59,61 +73,37 @@ export const messageRouter = router({
     }),
 
   createMessage: messageProcedure
-    .input(z.object({}).passthrough().partial())
+    .input(CreateNewMessageParamsSchema)
     .mutation(async ({ input, ctx }) => {
-      const data = await ctx.messageModel.create(input as any);
+      // 如果没有 agentId 但有 sessionId，从 sessionId 解析出 agentId
+      let agentId = input.agentId;
+      if (!agentId && input.sessionId) {
+        agentId = (await resolveAgentIdFromSession(input.sessionId, ctx.serverDB, ctx.userId))!;
+      }
 
-      return data.id;
-    }),
-
-  createNewMessage: messageProcedure
-    .input(z.object({}).passthrough().partial())
-    .mutation(async ({ input, ctx }) => {
-      return ctx.messageModel.createNewMessage(input as any, {
-        postProcessUrl: (path) => ctx.fileService.getFullFileUrl(path),
-      });
-    }),
-
-  // TODO: it will be removed in V2
-  getAllMessages: messageProcedure.query(async ({ ctx }): Promise<ChatMessageList> => {
-    return ctx.messageModel.queryAll() as any;
-  }),
-
-  // TODO: it will be removed in V2
-  getAllMessagesInSession: messageProcedure
-    .input(
-      z.object({
-        sessionId: z.string().nullable().optional(),
-      }),
-    )
-    .query(async ({ ctx, input }): Promise<ChatMessageList> => {
-      return ctx.messageModel.queryBySessionId(input.sessionId) as any;
+      // 使用解析后的 agentId 创建消息
+      return ctx.messageService.createMessage({ ...input, agentId } as any);
     }),
 
   getHeatmaps: messageProcedure.query(async ({ ctx }) => {
     return ctx.messageModel.getHeatmaps();
   }),
 
-  // TODO: 未来这部分方法也需要使用 authedProcedure
-  getMessages: publicProcedure
+  getMessages: messageProcedure
     .input(
       z.object({
+        agentId: z.string().nullable().optional(),
         current: z.number().optional(),
         groupId: z.string().nullable().optional(),
         pageSize: z.number().optional(),
         sessionId: z.string().nullable().optional(),
+        threadId: z.string().nullable().optional(),
         topicId: z.string().nullable().optional(),
       }),
     )
     .query(async ({ input, ctx }) => {
-      if (!ctx.userId) return [];
-      const serverDB = await getServerDB();
-
-      const messageModel = new MessageModel(serverDB, ctx.userId);
-      const fileService = new FileService(serverDB, ctx.userId);
-
-      return messageModel.query(input, {
-        postProcessUrl: (path) => fileService.getFullFileUrl(path),
+      return ctx.messageModel.query(input, {
+        postProcessUrl: (path) => ctx.fileService.getFullFileUrl(path),
       });
     }),
 
@@ -126,9 +116,18 @@ export const messageRouter = router({
   }),
 
   removeMessage: messageProcedure
-    .input(z.object({ id: z.string() }))
+    .input(
+      z
+        .object({
+          id: z.string(),
+        })
+        .extend(basicContextSchema.shape),
+    )
     .mutation(async ({ input, ctx }) => {
-      return ctx.messageModel.deleteMessage(input.id);
+      const { id, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
+      return ctx.messageService.removeMessage(id, resolved);
     }),
 
   removeMessageQuery: messageProcedure
@@ -138,23 +137,35 @@ export const messageRouter = router({
     }),
 
   removeMessages: messageProcedure
-    .input(z.object({ ids: z.array(z.string()) }))
+    .input(
+      z
+        .object({
+          ids: z.array(z.string()),
+        })
+        .extend(basicContextSchema.shape),
+    )
     .mutation(async ({ input, ctx }) => {
-      return ctx.messageModel.deleteMessages(input.ids);
+      const { ids, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
+      return ctx.messageService.removeMessages(ids, resolved);
     }),
 
   removeMessagesByAssistant: messageProcedure
     .input(
-      z.object({
-        groupId: z.string().nullable().optional(),
-        sessionId: z.string().nullable().optional(),
-        topicId: z.string().nullable().optional(),
-      }),
+      z
+        .object({
+          groupId: z.string().nullable().optional(),
+        })
+        .extend(basicContextSchema.shape),
     )
     .mutation(async ({ input, ctx }) => {
+      const { agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
       return ctx.messageModel.deleteMessagesBySession(
-        input.sessionId,
-        input.topicId,
+        resolved.sessionId,
+        resolved.topicId,
         input.groupId,
       );
     }),
@@ -178,63 +189,91 @@ export const messageRouter = router({
 
   update: messageProcedure
     .input(
-      z.object({
-        id: z.string(),
-        value: z.object({}).passthrough().partial(),
-      }),
+      z
+        .object({
+          id: z.string(),
+          value: UpdateMessageParamsSchema,
+        })
+        .extend(basicContextSchema.shape),
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.messageModel.update(input.id, input.value);
+      const { id, value, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
+      return ctx.messageService.updateMessage(id, value as any, resolved);
     }),
 
   updateMessagePlugin: messageProcedure
     .input(
-      z.object({
-        id: z.string(),
-        value: updateMessagePluginSchema.partial(),
-      }),
+      z
+        .object({
+          id: z.string(),
+          value: UpdateMessagePluginSchema.partial(),
+        })
+        .extend(basicContextSchema.shape),
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.messageModel.updateMessagePlugin(input.id, input.value);
+      const { id, value, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
+      return ctx.messageService.updateMessagePlugin(id, value, resolved);
     }),
 
   updateMessageRAG: messageProcedure
-    .input(UpdateMessageRAGParamsSchema)
+    .input(UpdateMessageRAGParamsSchema.extend(basicContextSchema.shape))
     .mutation(async ({ input, ctx }) => {
-      await ctx.messageModel.updateMessageRAG(input.id, input.value);
+      const { id, value, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
+      return ctx.messageService.updateMessageRAG(id, value, resolved);
     }),
 
   updateMetadata: messageProcedure
     .input(
-      z.object({
-        id: z.string(),
-        value: z.object({}).passthrough(),
-      }),
+      z
+        .object({
+          id: z.string(),
+          value: z.object({}).passthrough(),
+        })
+        .extend(basicContextSchema.shape),
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.messageModel.updateMetadata(input.id, input.value);
+      const { id, value, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
+      return ctx.messageService.updateMetadata(id, value, resolved);
     }),
 
   updatePluginError: messageProcedure
     .input(
-      z.object({
-        id: z.string(),
-        value: z.object({}).passthrough().nullable(),
-      }),
+      z
+        .object({
+          id: z.string(),
+          value: z.object({}).passthrough().nullable(),
+        })
+        .extend(basicContextSchema.shape),
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.messageModel.updateMessagePlugin(input.id, { error: input.value });
+      const { id, value, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
+      return ctx.messageService.updatePluginError(id, value, resolved);
     }),
 
   updatePluginState: messageProcedure
     .input(
-      z.object({
-        id: z.string(),
-        value: z.object({}).passthrough(),
-      }),
+      z
+        .object({
+          id: z.string(),
+          value: z.object({}).passthrough(),
+        })
+        .extend(basicContextSchema.shape),
     )
     .mutation(async ({ input, ctx }) => {
-      return ctx.messageModel.updatePluginState(input.id, input.value);
+      const { id, value, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
+      return ctx.messageService.updatePluginState(id, value, resolved);
     }),
 
   updateTTS: messageProcedure
@@ -258,6 +297,46 @@ export const messageRouter = router({
       return ctx.messageModel.updateTTS(input.id, input.value);
     }),
 
+  updateToolArguments: messageProcedure
+    .input(
+      z
+        .object({
+          toolCallId: z.string(),
+          value: z.union([z.string(), z.record(z.unknown())]),
+        })
+        .extend(basicContextSchema.shape),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { toolCallId, value, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
+      return ctx.messageService.updateToolArguments(toolCallId, value, resolved);
+    }),
+
+  /**
+   * Update tool message with content, metadata, pluginState, and pluginError in a single transaction
+   * This prevents race conditions when updating multiple fields
+   */
+  updateToolMessage: messageProcedure
+    .input(
+      z
+        .object({
+          id: z.string(),
+          value: z.object({
+            content: z.string().optional(),
+            metadata: z.object({}).passthrough().optional(),
+            pluginError: z.any().optional(),
+            pluginState: z.object({}).passthrough().optional(),
+          }),
+        })
+        .extend(basicContextSchema.shape),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { id, value, agentId, ...options } = input;
+      const resolved = await resolveContext({ agentId, ...options }, ctx.serverDB, ctx.userId);
+
+      return ctx.messageService.updateToolMessage(id, value, resolved);
+    }),
   updateTranslate: messageProcedure
     .input(
       z.object({
@@ -279,5 +358,3 @@ export const messageRouter = router({
       return ctx.messageModel.updateTranslate(input.id, input.value);
     }),
 });
-
-export type MessageRouter = typeof messageRouter;

@@ -1,13 +1,13 @@
-import { UIChatMessage } from '@lobechat/types';
-import { Skeleton } from 'antd';
+import { type ChatMessageError } from '@lobechat/types';
+import { type AlertProps, Skeleton } from '@lobehub/ui';
 import dynamic from 'next/dynamic';
 import { memo } from 'react';
 
-import ErrorJsonViewer from '../ErrorJsonViewer';
+import ErrorContent from '@/features/Conversation/ChatItem/components/ErrorContent';
 
 const loading = () => <Skeleton active style={{ width: 300 }} />;
 
-const SetupGuide = dynamic(() => import('@/features/OllamaSetupGuide'), { loading, ssr: false });
+const SetupGuide = dynamic(() => import('../OllamaSetupGuide'), { loading, ssr: false });
 
 const InvalidModel = dynamic(() => import('./InvalidOllamaModel'), { loading, ssr: false });
 
@@ -24,7 +24,13 @@ interface OllamaErrorResponse {
 
 const UNRESOLVED_MODEL_REGEXP = /model "([\w+,-_]+)" not found/;
 
-const OllamaBizError = memo<UIChatMessage>(({ error, id }) => {
+interface OllamaBizErrorProps {
+  alertError?: AlertProps;
+  error?: ChatMessageError | null;
+  id: string;
+}
+
+const OllamaBizError = memo<OllamaBizErrorProps>(({ alertError, error, id }) => {
   const errorBody: OllamaErrorResponse = (error as any)?.body;
 
   const errorMessage = errorBody.error?.message;
@@ -40,7 +46,7 @@ const OllamaBizError = memo<UIChatMessage>(({ error, id }) => {
     return <SetupGuide id={id} />;
   }
 
-  return <ErrorJsonViewer error={error} id={id} />;
+  return <ErrorContent error={alertError} id={id} />;
 });
 
 export default OllamaBizError;

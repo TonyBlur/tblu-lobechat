@@ -1,17 +1,21 @@
 import type { ThemeMode } from 'antd-style';
-import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import type { NavigateFunction } from 'react-router-dom';
 
-import { DatabaseLoadingState, MigrationSQL, MigrationTableItem } from '@/types/clientDB';
-import { LocaleMode } from '@/types/locale';
+import { DatabaseLoadingState, type MigrationSQL, type MigrationTableItem } from '@/types/clientDB';
+import { type LocaleMode } from '@/types/locale';
 import { SessionDefaultGroup } from '@/types/session';
 import { AsyncLocalStorage } from '@/utils/localStorage';
 
 export enum SidebarTabKey {
   Chat = 'chat',
-  Discover = 'discover',
-  Files = 'files',
+  Community = 'community',
+  Home = 'home',
   Image = 'image',
+  Knowledge = 'knowledge',
   Me = 'me',
+  Memory = 'memory',
+  Pages = 'pages',
+  Resource = 'resource',
   Setting = 'settings',
 }
 
@@ -32,31 +36,58 @@ export enum GroupSettingsTabs {
 }
 
 export enum SettingsTabs {
+  APIKey = 'apikey',
   About = 'about',
   Agent = 'agent',
+  ChatAppearance = 'chat-appearance',
   Common = 'common',
   Hotkey = 'hotkey',
   Image = 'image',
   LLM = 'llm',
+  Memory = 'memory',
+  Profile = 'profile',
   Provider = 'provider',
   Proxy = 'proxy',
+  Security = 'security',
+  Stats = 'stats',
   Storage = 'storage',
-  SystemAgent = 'system-agent',
   TTS = 'tts',
+
+  /* eslint-disable typescript-sort-keys/string-enum */
+  // business
+  Plans = 'plans',
+  Funds = 'funds',
+  Usage = 'usage',
+  Billing = 'billing',
+  Referral = 'referral',
+  /* eslint-enable typescript-sort-keys/string-enum */
 }
 
+/**
+ * @deprecated Use SettingsTabs instead
+ */
 export enum ProfileTabs {
   APIKey = 'apikey',
+  Memory = 'memory',
   Profile = 'profile',
   Security = 'security',
   Stats = 'stats',
+  Usage = 'usage',
 }
 
 export interface SystemStatus {
+  /**
+   * number of agents (defaultList) to display
+   */
+  agentPageSize?: number;
   chatInputHeight?: number;
+  disabledModelProvidersSortType?: string;
+  disabledModelsSortType?: string;
   expandInputActionbar?: boolean;
   // which sessionGroup should expand
   expandSessionGroupKeys: string[];
+  // which topicGroup should expand
+  expandTopicGroupKeys?: string[];
   fileManagerViewMode?: 'list' | 'masonry';
   filePanelWidth: number;
   hideGemini2_5FlashImagePreviewChineseWarning?: boolean;
@@ -69,6 +100,7 @@ export interface SystemStatus {
    */
   isEnablePglite?: boolean;
   isShowCredit?: boolean;
+  knowledgeBaseModalViewMode?: 'list' | 'masonry';
   language?: LocaleMode;
   /**
    * 记住用户最后选择的图像生成模型
@@ -79,23 +111,36 @@ export interface SystemStatus {
    */
   lastSelectedImageProvider?: string;
   latestChangelogId?: string;
+  leftPanelWidth: number;
   mobileShowPortal?: boolean;
   mobileShowTopic?: boolean;
   noWideScreen?: boolean;
+  /**
+   * number of pages (documents) to display per page
+   */
+  pagePageSize?: number;
   portalWidth: number;
-  sessionsWidth: number;
-  showChatSideBar?: boolean;
+  showCommandMenu?: boolean;
   showFilePanel?: boolean;
   showHotkeyHelper?: boolean;
   showImagePanel?: boolean;
   showImageTopicPanel?: boolean;
-  showSessionPanel?: boolean;
+  showLeftPanel?: boolean;
+  showRightPanel?: boolean;
   showSystemRole?: boolean;
   systemRoleExpandedMap: Record<string, boolean>;
   /**
    * theme mode
    */
   themeMode?: ThemeMode;
+  /**
+   * 是否使用短格式显示 token
+   */
+  tokenDisplayFormatShort?: boolean;
+  /**
+   * number of topics to display per page
+   */
+  topicPageSize?: number;
   zenMode?: boolean;
 }
 
@@ -116,14 +161,17 @@ export interface GlobalState {
   isMobile?: boolean;
   isStatusInit?: boolean;
   latestVersion?: string;
-  router?: AppRouterInstance;
+  navigate?: NavigateFunction;
   sidebarKey: SidebarTabKey;
   status: SystemStatus;
   statusStorage: AsyncLocalStorage<SystemStatus>;
 }
 
 export const INITIAL_STATUS = {
+  agentPageSize: 10,
   chatInputHeight: 64,
+  disabledModelProvidersSortType: 'default',
+  disabledModelsSortType: 'default',
   expandInputActionbar: true,
   expandSessionGroupKeys: [SessionDefaultGroup.Pinned, SessionDefaultGroup.Default],
   fileManagerViewMode: 'list' as const,
@@ -133,19 +181,24 @@ export const INITIAL_STATUS = {
   hideThreadLimitAlert: false,
   imagePanelWidth: 320,
   imageTopicPanelWidth: 80,
+  knowledgeBaseModalViewMode: 'list' as const,
+  leftPanelWidth: 320,
   mobileShowTopic: false,
   noWideScreen: true,
+  pagePageSize: 20,
   portalWidth: 400,
-  sessionsWidth: 320,
-  showChatSideBar: true,
+  showCommandMenu: false,
   showFilePanel: true,
   showHotkeyHelper: false,
   showImagePanel: true,
   showImageTopicPanel: true,
-  showSessionPanel: true,
+  showLeftPanel: true,
+  showRightPanel: true,
   showSystemRole: false,
   systemRoleExpandedMap: {},
   themeMode: 'auto',
+  tokenDisplayFormatShort: true,
+  topicPageSize: 20,
   zenMode: false,
 } satisfies SystemStatus;
 

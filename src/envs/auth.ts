@@ -1,6 +1,44 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix , typescript-sort-keys/interface */
+import { enableBetterAuth, enableClerk, enableNextAuth } from '@lobechat/const';
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
+
+/**
+ * Resolve public auth URL with compatibility fallbacks for NextAuth and Vercel deployments.
+ */
+const resolvePublicAuthUrl = () => {
+  if (process.env.NEXT_PUBLIC_AUTH_URL) return process.env.NEXT_PUBLIC_AUTH_URL;
+
+  if (process.env.NEXTAUTH_URL) {
+    try {
+      return new URL(process.env.NEXTAUTH_URL).origin;
+    } catch {
+      // ignore invalid NEXTAUTH_URL
+    }
+  }
+
+  if (process.env.APP_URL) {
+    try {
+      return new URL(process.env.APP_URL).origin;
+    } catch {
+      // ignore invalid APP_URL
+    }
+  }
+
+  if (process.env.VERCEL_URL) {
+    try {
+      const normalizedVercelUrl = process.env.VERCEL_URL.startsWith('http')
+        ? process.env.VERCEL_URL
+        : `https://${process.env.VERCEL_URL}`;
+
+      return new URL(normalizedVercelUrl).origin;
+    } catch {
+      // ignore invalid Vercel URL
+    }
+  }
+
+  return undefined;
+};
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -11,6 +49,13 @@ declare global {
       CLERK_SECRET_KEY?: string;
       CLERK_WEBHOOK_SECRET?: string;
 
+      // ===== Auth (shared by Better Auth / Next Auth) ===== //
+      AUTH_SECRET?: string;
+      NEXT_PUBLIC_AUTH_URL?: string;
+      NEXT_PUBLIC_AUTH_EMAIL_VERIFICATION?: string;
+      AUTH_SSO_PROVIDERS?: string;
+      AUTH_TRUSTED_ORIGINS?: string;
+
       // ===== Next Auth ===== //
       NEXT_AUTH_SECRET?: string;
 
@@ -20,259 +65,350 @@ declare global {
 
       NEXT_AUTH_SSO_SESSION_STRATEGY?: string;
 
-      AUTH0_CLIENT_ID?: string;
-      AUTH0_CLIENT_SECRET?: string;
-      AUTH0_ISSUER?: string;
+      // ===== Next Auth Provider Credentials ===== //
+      AUTH_GOOGLE_ID?: string;
+      AUTH_GOOGLE_SECRET?: string;
 
-      // Github
-      GITHUB_CLIENT_ID?: string;
-      GITHUB_CLIENT_SECRET?: string;
+      AUTH_APPLE_CLIENT_ID?: string;
+      AUTH_APPLE_CLIENT_SECRET?: string;
+      AUTH_APPLE_APP_BUNDLE_IDENTIFIER?: string;
 
-      // Azure AD
+      AUTH_GITHUB_ID?: string;
+      AUTH_GITHUB_SECRET?: string;
+
+      AUTH_COGNITO_ID?: string;
+      AUTH_COGNITO_SECRET?: string;
+      AUTH_COGNITO_ISSUER?: string;
+      AUTH_COGNITO_DOMAIN?: string;
+      AUTH_COGNITO_REGION?: string;
+      AUTH_COGNITO_USERPOOL_ID?: string;
+
+      AUTH_MICROSOFT_ID?: string;
+      AUTH_MICROSOFT_SECRET?: string;
+
+      AUTH_AUTH0_ID?: string;
+      AUTH_AUTH0_SECRET?: string;
+      AUTH_AUTH0_ISSUER?: string;
+
+      AUTH_AUTHELIA_ID?: string;
+      AUTH_AUTHELIA_SECRET?: string;
+      AUTH_AUTHELIA_ISSUER?: string;
+
+      AUTH_AUTHENTIK_ID?: string;
+      AUTH_AUTHENTIK_SECRET?: string;
+      AUTH_AUTHENTIK_ISSUER?: string;
+
+      AUTH_CASDOOR_ID?: string;
+      AUTH_CASDOOR_SECRET?: string;
+      AUTH_CASDOOR_ISSUER?: string;
+
+      AUTH_CLOUDFLARE_ZERO_TRUST_ID?: string;
+      AUTH_CLOUDFLARE_ZERO_TRUST_SECRET?: string;
+      AUTH_CLOUDFLARE_ZERO_TRUST_ISSUER?: string;
+
+      AUTH_FEISHU_APP_ID?: string;
+      AUTH_FEISHU_APP_SECRET?: string;
+
+      AUTH_GENERIC_OIDC_ID?: string;
+      AUTH_GENERIC_OIDC_SECRET?: string;
+      AUTH_GENERIC_OIDC_ISSUER?: string;
+
+      AUTH_KEYCLOAK_ID?: string;
+      AUTH_KEYCLOAK_SECRET?: string;
+      AUTH_KEYCLOAK_ISSUER?: string;
+
+      AUTH_LOGTO_ID?: string;
+      AUTH_LOGTO_SECRET?: string;
+      AUTH_LOGTO_ISSUER?: string;
+
+      AUTH_MICROSOFT_ENTRA_ID_ID?: string;
+      AUTH_MICROSOFT_ENTRA_ID_SECRET?: string;
+      AUTH_MICROSOFT_ENTRA_ID_TENANT_ID?: string;
+      AUTH_MICROSOFT_ENTRA_ID_BASE_URL?: string;
+
+      AUTH_OKTA_ID?: string;
+      AUTH_OKTA_SECRET?: string;
+      AUTH_OKTA_ISSUER?: string;
+
+      AUTH_WECHAT_ID?: string;
+      AUTH_WECHAT_SECRET?: string;
+
+      AUTH_ZITADEL_ID?: string;
+      AUTH_ZITADEL_SECRET?: string;
+      AUTH_ZITADEL_ISSUER?: string;
+
+      AUTH_AZURE_AD_ID?: string;
+      AUTH_AZURE_AD_SECRET?: string;
+      AUTH_AZURE_AD_TENANT_ID?: string;
+
       AZURE_AD_CLIENT_ID?: string;
       AZURE_AD_CLIENT_SECRET?: string;
       AZURE_AD_TENANT_ID?: string;
-
-      // AUTHENTIK
-      AUTHENTIK_CLIENT_ID?: string;
-      AUTHENTIK_CLIENT_SECRET?: string;
-      AUTHENTIK_ISSUER?: string;
 
       // ZITADEL
       ZITADEL_CLIENT_ID?: string;
       ZITADEL_CLIENT_SECRET?: string;
       ZITADEL_ISSUER?: string;
+
+      // ===== JWKS Key ===== //
+      /**
+       * Generic JWKS key for signing/verifying JWTs.
+       * Used for internal service authentication and other cryptographic operations.
+       * Must be a JWKS JSON string containing an RS256 RSA key pair.
+       * Can be generated using `node scripts/generate-oidc-jwk.mjs`.
+       */
+      JWKS_KEY?: string;
     }
   }
 }
 
-// TODO(NextAuth ENVs Migration): Remove once nextauth envs migration time end
-const removeTipsTemplate = (willBeRemoved: string, replaceOne: string) =>
-  `${willBeRemoved} will be removed in the future. Please set ${replaceOne} instead.`;
-// End
-
 export const getAuthConfig = () => {
-  // TODO(NextAuth ENVs Migration): Remove once nextauth envs migration time end
-  if (process.env.AUTH0_CLIENT_ID) {
-    console.warn(removeTipsTemplate('AUTH0_CLIENT_ID', 'AUTH_AUTH0_ID'));
-  }
-  if (process.env.AUTH0_CLIENT_SECRET) {
-    console.warn(removeTipsTemplate('AUTH0_CLIENT_SECRET', 'AUTH_AUTH0_SECRET'));
-  }
-  if (process.env.AUTH0_ISSUER) {
-    console.warn(removeTipsTemplate('AUTH0_ISSUER', 'AUTH_AUTH0_ISSUER'));
-  }
-  if (process.env.AUTHENTIK_CLIENT_ID) {
-    console.warn(removeTipsTemplate('AUTHENTIK_CLIENT_ID', 'AUTH_AUTHENTIK_ID'));
-  }
-  if (process.env.AUTHENTIK_CLIENT_SECRET) {
-    console.warn(removeTipsTemplate('AUTHENTIK_CLIENT_SECRET', 'AUTH_AUTHENTIK_SECRET'));
-  }
-  if (process.env.AUTHENTIK_ISSUER) {
-    console.warn(removeTipsTemplate('AUTHENTIK_ISSUER', 'AUTH_AUTHENTIK_ISSUER'));
-  }
-  if (process.env.AUTHELIA_CLIENT_ID) {
-    console.warn(removeTipsTemplate('AUTHELIA_CLIENT_ID', 'AUTH_AUTHELIA_ID'));
-  }
-  if (process.env.AUTHELIA_CLIENT_SECRET) {
-    console.warn(removeTipsTemplate('AUTHELIA_CLIENT_SECRET', 'AUTH_AUTHELIA_SECRET'));
-  }
-  if (process.env.AUTHELIA_ISSUER) {
-    console.warn(removeTipsTemplate('AUTHELIA_ISSUER', 'AUTH_AUTHELIA_ISSUER'));
-  }
-  if (process.env.AZURE_AD_CLIENT_ID) {
-    console.warn(removeTipsTemplate('AZURE_AD_CLIENT_ID', 'AUTH_AZURE_AD_ID'));
-  }
-  if (process.env.AZURE_AD_CLIENT_SECRET) {
-    console.warn(removeTipsTemplate('AZURE_AD_CLIENT_SECRET', 'AUTH_AZURE_AD_SECRET'));
-  }
-  if (process.env.AZURE_AD_TENANT_ID) {
-    console.warn(removeTipsTemplate('AZURE_AD_TENANT_ID', 'AUTH_AZURE_AD_TENANT_ID'));
-  }
-  if (process.env.CLOUDFLARE_ZERO_TRUST_CLIENT_ID) {
-    console.warn(
-      removeTipsTemplate('CLOUDFLARE_ZERO_TRUST_CLIENT_ID', 'AUTH_CLOUDFLARE_ZERO_TRUST_ID'),
-    );
-  }
-  if (process.env.CLOUDFLARE_ZERO_TRUST_CLIENT_SECRET) {
-    console.warn(
-      removeTipsTemplate(
-        'CLOUDFLARE_ZERO_TRUST_CLIENT_SECRET',
-        'AUTH_CLOUDFLARE_ZERO_TRUST_SECRET',
-      ),
-    );
-  }
-  if (process.env.CLOUDFLARE_ZERO_TRUST_ISSUER) {
-    console.warn(
-      removeTipsTemplate('CLOUDFLARE_ZERO_TRUST_ISSUER', 'AUTH_CLOUDFLARE_ZERO_TRUST_ISSUER'),
-    );
-  }
-  if (process.env.GENERIC_OIDC_CLIENT_ID) {
-    console.warn(removeTipsTemplate('GENERIC_OIDC_CLIENT_ID', 'AUTH_GENERIC_OIDC_ID'));
-  }
-  if (process.env.GENERIC_OIDC_CLIENT_SECRET) {
-    console.warn(removeTipsTemplate('GENERIC_OIDC_CLIENT_SECRET', 'AUTH_GENERIC_OIDC_SECRET'));
-  }
-  if (process.env.GENERIC_OIDC_ISSUER) {
-    console.warn(removeTipsTemplate('GENERIC_OIDC_ISSUER', 'AUTH_GENERIC_OIDC_ISSUER'));
-  }
-  if (process.env.GITHUB_CLIENT_ID) {
-    console.warn(removeTipsTemplate('GITHUB_CLIENT_ID', 'AUTH_GITHUB_ID'));
-  }
-  if (process.env.GITHUB_CLIENT_SECRET) {
-    console.warn(removeTipsTemplate('GITHUB_CLIENT_SECRET', 'AUTH_GITHUB_SECRET'));
-  }
-  if (process.env.LOGTO_CLIENT_ID) {
-    console.warn(removeTipsTemplate('LOGTO_CLIENT_ID', 'AUTH_LOGTO_ID'));
-  }
-  if (process.env.LOGTO_CLIENT_SECRET) {
-    console.warn(removeTipsTemplate('LOGTO_CLIENT_SECRET', 'AUTH_LOGTO_SECRET'));
-  }
-  if (process.env.LOGTO_ISSUER) {
-    console.warn(removeTipsTemplate('LOGTO_ISSUER', 'AUTH_LOGTO_ISSUER'));
-  }
-  if (process.env.ZITADEL_CLIENT_ID) {
-    console.warn(removeTipsTemplate('ZITADEL_CLIENT_ID', 'AUTH_ZITADEL_ID'));
-  }
-  if (process.env.ZITADEL_CLIENT_SECRET) {
-    console.warn(removeTipsTemplate('ZITADEL_CLIENT_SECRET', 'AUTH_ZITADEL_SECRET'));
-  }
-  if (process.env.ZITADEL_ISSUER) {
-    console.warn(removeTipsTemplate('ZITADEL_ISSUER', 'AUTH_ZITADEL_ISSUER'));
-  }
-  // End
-
   return createEnv({
     client: {
+      // ---------------------------------- clerk ----------------------------------
+      NEXT_PUBLIC_ENABLE_CLERK_AUTH: z.boolean().optional().default(false),
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
-      /**
-       * whether to enabled clerk
-       */
-      NEXT_PUBLIC_ENABLE_CLERK_AUTH: z.boolean().optional(),
 
+      // ---------------------------------- better auth ----------------------------------
+      NEXT_PUBLIC_ENABLE_BETTER_AUTH: z.boolean().optional(),
+      NEXT_PUBLIC_AUTH_URL: z.string().optional(),
+      NEXT_PUBLIC_AUTH_EMAIL_VERIFICATION: z.boolean().optional().default(false),
+      NEXT_PUBLIC_ENABLE_MAGIC_LINK: z.boolean().optional().default(false),
+
+      // ---------------------------------- next auth ----------------------------------
       NEXT_PUBLIC_ENABLE_NEXT_AUTH: z.boolean().optional(),
     },
     server: {
-      // Clerk
+      // ---------------------------------- clerk ----------------------------------
       CLERK_SECRET_KEY: z.string().optional(),
       CLERK_WEBHOOK_SECRET: z.string().optional(),
 
-      // NEXT-AUTH
+      // ---------------------------------- better auth ----------------------------------
+      AUTH_SECRET: z.string().optional(),
+      AUTH_SSO_PROVIDERS: z.string().optional().default(''),
+      AUTH_TRUSTED_ORIGINS: z.string().optional(),
+
+      // ---------------------------------- next auth ----------------------------------
       NEXT_AUTH_SECRET: z.string().optional(),
       NEXT_AUTH_SSO_PROVIDERS: z.string().optional().default('auth0'),
       NEXT_AUTH_DEBUG: z.boolean().optional().default(false),
       NEXT_AUTH_SSO_SESSION_STRATEGY: z.enum(['jwt', 'database']).optional().default('jwt'),
 
-      // Auth0
-      AUTH0_CLIENT_ID: z.string().optional(),
-      AUTH0_CLIENT_SECRET: z.string().optional(),
-      AUTH0_ISSUER: z.string().optional(),
+      AUTH_GOOGLE_ID: z.string().optional(),
+      AUTH_GOOGLE_SECRET: z.string().optional(),
 
-      // Github
-      GITHUB_CLIENT_ID: z.string().optional(),
-      GITHUB_CLIENT_SECRET: z.string().optional(),
+      AUTH_APPLE_CLIENT_ID: z.string().optional(),
+      AUTH_APPLE_CLIENT_SECRET: z.string().optional(),
+      AUTH_APPLE_APP_BUNDLE_IDENTIFIER: z.string().optional(),
 
-      // Azure AD
+      AUTH_GITHUB_ID: z.string().optional(),
+      AUTH_GITHUB_SECRET: z.string().optional(),
+
+      AUTH_COGNITO_ID: z.string().optional(),
+      AUTH_COGNITO_SECRET: z.string().optional(),
+      AUTH_COGNITO_ISSUER: z.string().optional(),
+      AUTH_COGNITO_DOMAIN: z.string().optional(),
+      AUTH_COGNITO_REGION: z.string().optional(),
+      AUTH_COGNITO_USERPOOL_ID: z.string().optional(),
+
+      AUTH_MICROSOFT_ID: z.string().optional(),
+      AUTH_MICROSOFT_SECRET: z.string().optional(),
+
+      AUTH_AUTH0_ID: z.string().optional(),
+      AUTH_AUTH0_SECRET: z.string().optional(),
+      AUTH_AUTH0_ISSUER: z.string().optional(),
+
+      AUTH_AUTHELIA_ID: z.string().optional(),
+      AUTH_AUTHELIA_SECRET: z.string().optional(),
+      AUTH_AUTHELIA_ISSUER: z.string().optional(),
+
+      AUTH_AUTHENTIK_ID: z.string().optional(),
+      AUTH_AUTHENTIK_SECRET: z.string().optional(),
+      AUTH_AUTHENTIK_ISSUER: z.string().optional(),
+
+      AUTH_CASDOOR_ID: z.string().optional(),
+      AUTH_CASDOOR_SECRET: z.string().optional(),
+      AUTH_CASDOOR_ISSUER: z.string().optional(),
+
+      AUTH_CLOUDFLARE_ZERO_TRUST_ID: z.string().optional(),
+      AUTH_CLOUDFLARE_ZERO_TRUST_SECRET: z.string().optional(),
+      AUTH_CLOUDFLARE_ZERO_TRUST_ISSUER: z.string().optional(),
+
+      AUTH_FEISHU_APP_ID: z.string().optional(),
+      AUTH_FEISHU_APP_SECRET: z.string().optional(),
+
+      AUTH_GENERIC_OIDC_ID: z.string().optional(),
+      AUTH_GENERIC_OIDC_SECRET: z.string().optional(),
+      AUTH_GENERIC_OIDC_ISSUER: z.string().optional(),
+
+      AUTH_KEYCLOAK_ID: z.string().optional(),
+      AUTH_KEYCLOAK_SECRET: z.string().optional(),
+      AUTH_KEYCLOAK_ISSUER: z.string().optional(),
+
+      AUTH_LOGTO_ID: z.string().optional(),
+      AUTH_LOGTO_SECRET: z.string().optional(),
+      AUTH_LOGTO_ISSUER: z.string().optional(),
+
+      AUTH_MICROSOFT_ENTRA_ID_ID: z.string().optional(),
+      AUTH_MICROSOFT_ENTRA_ID_SECRET: z.string().optional(),
+      AUTH_MICROSOFT_ENTRA_ID_TENANT_ID: z.string().optional(),
+      AUTH_MICROSOFT_ENTRA_ID_BASE_URL: z.string().optional(),
+
+      AUTH_OKTA_ID: z.string().optional(),
+      AUTH_OKTA_SECRET: z.string().optional(),
+      AUTH_OKTA_ISSUER: z.string().optional(),
+
+      AUTH_WECHAT_ID: z.string().optional(),
+      AUTH_WECHAT_SECRET: z.string().optional(),
+
+      AUTH_ZITADEL_ID: z.string().optional(),
+      AUTH_ZITADEL_SECRET: z.string().optional(),
+      AUTH_ZITADEL_ISSUER: z.string().optional(),
+
+      AUTH_AZURE_AD_ID: z.string().optional(),
+      AUTH_AZURE_AD_SECRET: z.string().optional(),
+      AUTH_AZURE_AD_TENANT_ID: z.string().optional(),
+
       AZURE_AD_CLIENT_ID: z.string().optional(),
       AZURE_AD_CLIENT_SECRET: z.string().optional(),
       AZURE_AD_TENANT_ID: z.string().optional(),
 
-      // AUTHENTIK
-      AUTHENTIK_CLIENT_ID: z.string().optional(),
-      AUTHENTIK_CLIENT_SECRET: z.string().optional(),
-      AUTHENTIK_ISSUER: z.string().optional(),
-
-      // AUTHELIA
-      AUTHELIA_CLIENT_ID: z.string().optional(),
-      AUTHELIA_CLIENT_SECRET: z.string().optional(),
-      AUTHELIA_ISSUER: z.string().optional(),
-
-      // Cloudflare Zero Trust
-      CLOUDFLARE_ZERO_TRUST_CLIENT_ID: z.string().optional(),
-      CLOUDFLARE_ZERO_TRUST_CLIENT_SECRET: z.string().optional(),
-      CLOUDFLARE_ZERO_TRUST_ISSUER: z.string().optional(),
-
-      // Generic OIDC
-      GENERIC_OIDC_CLIENT_ID: z.string().optional(),
-      GENERIC_OIDC_CLIENT_SECRET: z.string().optional(),
-      GENERIC_OIDC_ISSUER: z.string().optional(),
-
-      // ZITADEL
       ZITADEL_CLIENT_ID: z.string().optional(),
       ZITADEL_CLIENT_SECRET: z.string().optional(),
       ZITADEL_ISSUER: z.string().optional(),
 
-      // LOGTO
-      LOGTO_CLIENT_ID: z.string().optional(),
-      LOGTO_CLIENT_SECRET: z.string().optional(),
-      LOGTO_ISSUER: z.string().optional(),
       LOGTO_WEBHOOK_SIGNING_KEY: z.string().optional(),
 
       // Casdoor
       CASDOOR_WEBHOOK_SECRET: z.string().optional(),
+
+      // Generic JWKS key for signing/verifying JWTs
+      JWKS_KEY: z.string().optional(),
+      ENABLE_OIDC: z.boolean(),
     },
 
     runtimeEnv: {
       // Clerk
-      NEXT_PUBLIC_ENABLE_CLERK_AUTH: !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+      NEXT_PUBLIC_ENABLE_CLERK_AUTH: enableClerk,
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
       CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
       CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
 
-      // Next Auth
-      NEXT_PUBLIC_ENABLE_NEXT_AUTH: process.env.NEXT_PUBLIC_ENABLE_NEXT_AUTH === '1',
+      // ---------------------------------- better auth ----------------------------------
+      NEXT_PUBLIC_ENABLE_BETTER_AUTH: enableBetterAuth,
+      // Fallback to NEXTAUTH_URL origin or Vercel deployment domain for seamless migration from next-auth
+      NEXT_PUBLIC_AUTH_URL: resolvePublicAuthUrl(),
+      NEXT_PUBLIC_AUTH_EMAIL_VERIFICATION: process.env.NEXT_PUBLIC_AUTH_EMAIL_VERIFICATION === '1',
+      NEXT_PUBLIC_ENABLE_MAGIC_LINK: process.env.NEXT_PUBLIC_ENABLE_MAGIC_LINK === '1',
+      // Fallback to NEXT_AUTH_SECRET for seamless migration from next-auth
+      AUTH_SECRET: process.env.AUTH_SECRET || process.env.NEXT_AUTH_SECRET,
+      // Fallback to NEXT_AUTH_SSO_PROVIDERS for seamless migration from next-auth
+      AUTH_SSO_PROVIDERS: process.env.AUTH_SSO_PROVIDERS || process.env.NEXT_AUTH_SSO_PROVIDERS,
+      AUTH_TRUSTED_ORIGINS: process.env.AUTH_TRUSTED_ORIGINS,
+
+      // better-auth env for Cognito provider is different from next-auth's one
+      AUTH_COGNITO_DOMAIN: process.env.AUTH_COGNITO_DOMAIN,
+      AUTH_COGNITO_REGION: process.env.AUTH_COGNITO_REGION,
+      AUTH_COGNITO_USERPOOL_ID: process.env.AUTH_COGNITO_USERPOOL_ID,
+
+      // ---------------------------------- next auth ----------------------------------
+      NEXT_PUBLIC_ENABLE_NEXT_AUTH: enableNextAuth,
       NEXT_AUTH_SSO_PROVIDERS: process.env.NEXT_AUTH_SSO_PROVIDERS,
       NEXT_AUTH_SECRET: process.env.NEXT_AUTH_SECRET,
       NEXT_AUTH_DEBUG: !!process.env.NEXT_AUTH_DEBUG,
       NEXT_AUTH_SSO_SESSION_STRATEGY: process.env.NEXT_AUTH_SSO_SESSION_STRATEGY || 'jwt',
 
-      // Auth0
-      AUTH0_CLIENT_ID: process.env.AUTH0_CLIENT_ID,
-      AUTH0_CLIENT_SECRET: process.env.AUTH0_CLIENT_SECRET,
-      AUTH0_ISSUER: process.env.AUTH0_ISSUER,
+      // Next Auth Provider Credentials
+      AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
+      AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
 
-      // Github
-      GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
-      GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+      AUTH_APPLE_CLIENT_ID: process.env.AUTH_APPLE_CLIENT_ID,
+      AUTH_APPLE_CLIENT_SECRET: process.env.AUTH_APPLE_CLIENT_SECRET,
+      AUTH_APPLE_APP_BUNDLE_IDENTIFIER: process.env.AUTH_APPLE_APP_BUNDLE_IDENTIFIER,
 
-      // Azure AD
+      AUTH_GITHUB_ID: process.env.AUTH_GITHUB_ID,
+      AUTH_GITHUB_SECRET: process.env.AUTH_GITHUB_SECRET,
+
+      AUTH_MICROSOFT_ID: process.env.AUTH_MICROSOFT_ID,
+      AUTH_MICROSOFT_SECRET: process.env.AUTH_MICROSOFT_SECRET,
+
+      AUTH_COGNITO_ID: process.env.AUTH_COGNITO_ID,
+      AUTH_COGNITO_SECRET: process.env.AUTH_COGNITO_SECRET,
+      AUTH_COGNITO_ISSUER: process.env.AUTH_COGNITO_ISSUER,
+
+      AUTH_AUTH0_ID: process.env.AUTH_AUTH0_ID,
+      AUTH_AUTH0_SECRET: process.env.AUTH_AUTH0_SECRET,
+      AUTH_AUTH0_ISSUER: process.env.AUTH_AUTH0_ISSUER,
+
+      AUTH_AUTHELIA_ID: process.env.AUTH_AUTHELIA_ID,
+      AUTH_AUTHELIA_SECRET: process.env.AUTH_AUTHELIA_SECRET,
+      AUTH_AUTHELIA_ISSUER: process.env.AUTH_AUTHELIA_ISSUER,
+
+      AUTH_AUTHENTIK_ID: process.env.AUTH_AUTHENTIK_ID,
+      AUTH_AUTHENTIK_SECRET: process.env.AUTH_AUTHENTIK_SECRET,
+      AUTH_AUTHENTIK_ISSUER: process.env.AUTH_AUTHENTIK_ISSUER,
+
+      AUTH_CASDOOR_ID: process.env.AUTH_CASDOOR_ID,
+      AUTH_CASDOOR_SECRET: process.env.AUTH_CASDOOR_SECRET,
+      AUTH_CASDOOR_ISSUER: process.env.AUTH_CASDOOR_ISSUER,
+
+      AUTH_CLOUDFLARE_ZERO_TRUST_ID: process.env.AUTH_CLOUDFLARE_ZERO_TRUST_ID,
+      AUTH_CLOUDFLARE_ZERO_TRUST_SECRET: process.env.AUTH_CLOUDFLARE_ZERO_TRUST_SECRET,
+      AUTH_CLOUDFLARE_ZERO_TRUST_ISSUER: process.env.AUTH_CLOUDFLARE_ZERO_TRUST_ISSUER,
+
+      AUTH_FEISHU_APP_ID: process.env.AUTH_FEISHU_APP_ID,
+      AUTH_FEISHU_APP_SECRET: process.env.AUTH_FEISHU_APP_SECRET,
+
+      AUTH_GENERIC_OIDC_ID: process.env.AUTH_GENERIC_OIDC_ID,
+      AUTH_GENERIC_OIDC_SECRET: process.env.AUTH_GENERIC_OIDC_SECRET,
+      AUTH_GENERIC_OIDC_ISSUER: process.env.AUTH_GENERIC_OIDC_ISSUER,
+
+      AUTH_KEYCLOAK_ID: process.env.AUTH_KEYCLOAK_ID,
+      AUTH_KEYCLOAK_SECRET: process.env.AUTH_KEYCLOAK_SECRET,
+      AUTH_KEYCLOAK_ISSUER: process.env.AUTH_KEYCLOAK_ISSUER,
+
+      AUTH_LOGTO_ID: process.env.AUTH_LOGTO_ID,
+      AUTH_LOGTO_SECRET: process.env.AUTH_LOGTO_SECRET,
+      AUTH_LOGTO_ISSUER: process.env.AUTH_LOGTO_ISSUER,
+
+      AUTH_MICROSOFT_ENTRA_ID_ID: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
+      AUTH_MICROSOFT_ENTRA_ID_SECRET: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
+      AUTH_MICROSOFT_ENTRA_ID_TENANT_ID: process.env.AUTH_MICROSOFT_ENTRA_ID_TENANT_ID,
+      AUTH_MICROSOFT_ENTRA_ID_BASE_URL: process.env.AUTH_MICROSOFT_ENTRA_ID_BASE_URL,
+
+      AUTH_OKTA_ID: process.env.AUTH_OKTA_ID,
+      AUTH_OKTA_SECRET: process.env.AUTH_OKTA_SECRET,
+      AUTH_OKTA_ISSUER: process.env.AUTH_OKTA_ISSUER,
+
+      AUTH_WECHAT_ID: process.env.AUTH_WECHAT_ID,
+      AUTH_WECHAT_SECRET: process.env.AUTH_WECHAT_SECRET,
+
+      AUTH_ZITADEL_ID: process.env.AUTH_ZITADEL_ID,
+      AUTH_ZITADEL_SECRET: process.env.AUTH_ZITADEL_SECRET,
+      AUTH_ZITADEL_ISSUER: process.env.AUTH_ZITADEL_ISSUER,
+
+      AUTH_AZURE_AD_ID: process.env.AUTH_AZURE_AD_ID,
+      AUTH_AZURE_AD_SECRET: process.env.AUTH_AZURE_AD_SECRET,
+      AUTH_AZURE_AD_TENANT_ID: process.env.AUTH_AZURE_AD_TENANT_ID,
+
+      // legacy Azure AD envs for backward compatibility
       AZURE_AD_CLIENT_ID: process.env.AZURE_AD_CLIENT_ID,
       AZURE_AD_CLIENT_SECRET: process.env.AZURE_AD_CLIENT_SECRET,
       AZURE_AD_TENANT_ID: process.env.AZURE_AD_TENANT_ID,
 
-      // AUTHENTIK
-      AUTHENTIK_CLIENT_ID: process.env.AUTHENTIK_CLIENT_ID,
-      AUTHENTIK_CLIENT_SECRET: process.env.AUTHENTIK_CLIENT_SECRET,
-      AUTHENTIK_ISSUER: process.env.AUTHENTIK_ISSUER,
-
-      // AUTHELIA
-      AUTHELIA_CLIENT_ID: process.env.AUTHELIA_CLIENT_ID,
-      AUTHELIA_CLIENT_SECRET: process.env.AUTHELIA_CLIENT_SECRET,
-      AUTHELIA_ISSUER: process.env.AUTHELIA_ISSUER,
-
-      // Cloudflare Zero Trust
-      CLOUDFLARE_ZERO_TRUST_CLIENT_ID: process.env.CLOUDFLARE_ZERO_TRUST_CLIENT_ID,
-      CLOUDFLARE_ZERO_TRUST_CLIENT_SECRET: process.env.CLOUDFLARE_ZERO_TRUST_CLIENT_SECRET,
-      CLOUDFLARE_ZERO_TRUST_ISSUER: process.env.CLOUDFLARE_ZERO_TRUST_ISSUER,
-
-      // Generic OIDC
-      GENERIC_OIDC_CLIENT_ID: process.env.GENERIC_OIDC_CLIENT_ID,
-      GENERIC_OIDC_CLIENT_SECRET: process.env.GENERIC_OIDC_CLIENT_SECRET,
-      GENERIC_OIDC_ISSUER: process.env.GENERIC_OIDC_ISSUER,
-
-      // ZITADEL
       ZITADEL_CLIENT_ID: process.env.ZITADEL_CLIENT_ID,
       ZITADEL_CLIENT_SECRET: process.env.ZITADEL_CLIENT_SECRET,
       ZITADEL_ISSUER: process.env.ZITADEL_ISSUER,
 
       // LOGTO
-      LOGTO_CLIENT_ID: process.env.LOGTO_CLIENT_ID,
-      LOGTO_CLIENT_SECRET: process.env.LOGTO_CLIENT_SECRET,
-      LOGTO_ISSUER: process.env.LOGTO_ISSUER,
       LOGTO_WEBHOOK_SIGNING_KEY: process.env.LOGTO_WEBHOOK_SIGNING_KEY,
 
       // Casdoor
       CASDOOR_WEBHOOK_SECRET: process.env.CASDOOR_WEBHOOK_SECRET,
+
+      // Generic JWKS key (fallback to OIDC_JWKS_KEY for backward compatibility)
+      JWKS_KEY: process.env.JWKS_KEY || process.env.OIDC_JWKS_KEY,
+      ENABLE_OIDC: !!(process.env.JWKS_KEY || process.env.OIDC_JWKS_KEY),
     },
   });
 };

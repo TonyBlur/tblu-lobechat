@@ -1,9 +1,9 @@
-import { DraggablePanel } from '@lobehub/ui';
-import { useTheme } from 'antd-style';
+import { DraggablePanel, Flexbox } from '@lobehub/ui';
+import { cssVar, useTheme } from 'antd-style';
 import dynamic from 'next/dynamic';
 import { memo, useRef } from 'react';
-import { Flexbox } from 'react-layout-kit';
 
+import { useServerConfigStore } from '@/store/serverConfig';
 import { useToolStore } from '@/store/tool';
 
 import DetailLoading from './Detail/Loading';
@@ -13,20 +13,24 @@ const Detail = dynamic(() => import('./Detail'), { loading: DetailLoading, ssr: 
 
 export const MCPPluginList = memo(() => {
   const ref = useRef<HTMLDivElement>(null);
-  const theme = useTheme();
+  const theme = useTheme(); // Keep for colorBgContainerSecondary (not in cssVar)
+
+  const mobile = useServerConfigStore((s) => s.isMobile);
 
   return (
     <Flexbox
       height={'75vh'}
       horizontal
       style={{
-        borderTop: `1px solid ${theme.colorBorderSecondary}`,
+        borderTop: `1px solid ${cssVar.colorBorderSecondary}`,
         overflow: 'hidden',
         position: 'relative',
       }}
       width={'100%'}
     >
-      <DraggablePanel maxWidth={1024} minWidth={420} placement={'left'}>
+      {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+      {/* @ts-ignore */}
+      <DraggablePanel maxWidth={1024} minWidth={mobile ? '100vw' : 420} placement={'left'}>
         <List
           setIdentifier={(identifier) => {
             useToolStore.setState({ activeMCPIdentifier: identifier });

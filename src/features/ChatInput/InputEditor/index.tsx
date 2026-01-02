@@ -5,7 +5,7 @@ import {
   INSERT_MENTION_COMMAND,
   INSERT_TABLE_COMMAND,
   ReactCodePlugin,
-  ReactCodeblockPlugin,
+  ReactCodemirrorPlugin,
   ReactHRPlugin,
   ReactLinkHighlightPlugin,
   ReactListPlugin,
@@ -20,9 +20,13 @@ import { memo, useEffect, useMemo, useRef } from 'react';
 import { useHotkeysContext } from 'react-hotkeys-hook';
 import { useTranslation } from 'react-i18next';
 
+import { usePasteFile, useUploadFiles } from '@/components/DragUploadZone';
+import { useAgentStore } from '@/store/agent';
+import { agentByIdSelectors } from '@/store/agent/selectors';
 import { useUserStore } from '@/store/user';
-import { preferenceSelectors, settingsSelectors } from '@/store/user/selectors';
+import { labPreferSelectors, preferenceSelectors, settingsSelectors } from '@/store/user/selectors';
 
+import { useAgentId } from '../hooks/useAgentId';
 import { useChatInputStore, useStoreApi } from '../store';
 import Placeholder from './Placeholder';
 
@@ -55,6 +59,15 @@ const InputEditor = memo<{ defaultRows?: number }>(({ defaultRows = 2 }) => {
 
   const enableMention = !!mentionItems && mentionItems.length > 0;
 
+  // Get agent's model info for vision support check and handle paste upload
+  const agentId = useAgentId();
+  const model = useAgentStore((s) => agentByIdSelectors.getAgentModelById(agentId)(s));
+  const provider = useAgentStore((s) => agentByIdSelectors.getAgentModelProviderById(agentId)(s));
+  const { handleUploadFiles } = useUploadFiles({ model, provider });
+
+  // Listen to editor's paste event for file uploads
+  usePasteFile(editor, handleUploadFiles);
+
   useEffect(() => {
     const fn = (e: BeforeUnloadEvent) => {
       if (!state.isEmpty) {
@@ -69,7 +82,7 @@ const InputEditor = memo<{ defaultRows?: number }>(({ defaultRows = 2 }) => {
     };
   }, [state.isEmpty]);
 
-  const enableRichRender = useUserStore(preferenceSelectors.inputMarkdownRender);
+  const enableRichRender = useUserStore(labPreferSelectors.enableInputMarkdown);
 
   const richRenderProps = useMemo(
     () =>
@@ -91,7 +104,7 @@ const InputEditor = memo<{ defaultRows?: number }>(({ defaultRows = 2 }) => {
             plugins: [
               ReactListPlugin,
               ReactCodePlugin,
-              ReactCodeblockPlugin,
+              ReactCodemirrorPlugin,
               ReactHRPlugin,
               ReactLinkHighlightPlugin,
               ReactTablePlugin,

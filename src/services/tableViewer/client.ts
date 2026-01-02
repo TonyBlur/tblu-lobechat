@@ -1,16 +1,16 @@
-import { clientDB } from '@/database/client/db';
-import { TableViewerRepo } from '@/database/repositories/tableViewer';
-import { BaseClientService } from '@/services/baseClientService';
+export class ClientService {
+  getAllTables = async () => [
+    { count: 0, name: 'test' },
+    { count: 0, name: 'test2' },
+  ];
 
-export class ClientService extends BaseClientService {
-  private get tableViewerRepo(): TableViewerRepo {
-    return new TableViewerRepo(clientDB as any, this.userId);
-  }
+  getTableDetails = async (tableName: string) => {
+    console.log('getTableDetails:', tableName);
+    return [{ name: 'test' }];
+  };
 
-  getAllTables = async () => this.tableViewerRepo.getAllTables();
-
-  getTableDetails = async (tableName: string) => this.tableViewerRepo.getTableDetails(tableName);
-
-  getTableData = async (tableName: string) =>
-    this.tableViewerRepo.getTableData(tableName, { page: 1, pageSize: 300 });
+  getTableData = async (tableName: string) => {
+    console.log('getTableData:', tableName);
+    return [{ name: 'test' }];
+  };
 }

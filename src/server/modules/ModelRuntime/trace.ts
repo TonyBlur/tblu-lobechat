@@ -1,6 +1,6 @@
 import { INBOX_SESSION_ID, LOBE_CHAT_OBSERVATION_ID, LOBE_CHAT_TRACE_ID } from '@lobechat/const';
-import { ChatStreamCallbacks, ChatStreamPayload } from '@lobechat/model-runtime';
-import { TracePayload, TraceTagMap } from '@lobechat/types';
+import { type ChatStreamCallbacks, type ChatStreamPayload } from '@lobechat/model-runtime';
+import { type TracePayload, TraceTagMap } from '@lobechat/types';
 import { after } from 'next/server';
 
 import { TraceClient } from '@/libs/traces';
@@ -41,6 +41,16 @@ export const createTraceOptions = (
     name: `Chat Completion (${provider})`,
     startTime: new Date(),
   });
+
+  const headers = new Headers();
+
+  if (trace?.id) {
+    headers.set(LOBE_CHAT_TRACE_ID, trace.id);
+  }
+
+  if (generation?.id) {
+    headers.set(LOBE_CHAT_OBSERVATION_ID, generation.id);
+  }
 
   return {
     callback: {
@@ -94,9 +104,6 @@ export const createTraceOptions = (
         });
       },
     } as ChatStreamCallbacks,
-    headers: {
-      [LOBE_CHAT_OBSERVATION_ID]: generation?.id,
-      [LOBE_CHAT_TRACE_ID]: trace?.id,
-    },
+    headers: headers,
   };
 };

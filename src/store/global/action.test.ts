@@ -31,32 +31,32 @@ afterEach(() => {
 });
 
 describe('createPreferenceSlice', () => {
-  describe('toggleChatSideBar', () => {
+  describe('toggleRightPanel', () => {
     it('should toggle chat sidebar', () => {
       const { result } = renderHook(() => useGlobalStore());
 
       act(() => {
-        useGlobalStore.getState().updateSystemStatus({ showChatSideBar: false });
-        result.current.toggleChatSideBar();
+        useGlobalStore.getState().updateSystemStatus({ showRightPanel: false });
+        result.current.toggleRightPanel();
       });
 
-      expect(result.current.status.showChatSideBar).toBe(true);
+      expect(result.current.status.showRightPanel).toBe(true);
     });
     it('should set chat sidebar to specified value', () => {
       const { result } = renderHook(() => useGlobalStore());
 
       act(() => {
         useGlobalStore.setState({ isStatusInit: true });
-        result.current.toggleChatSideBar(true);
+        result.current.toggleRightPanel(true);
       });
 
-      expect(result.current.status.showChatSideBar).toBe(true);
+      expect(result.current.status.showRightPanel).toBe(true);
 
       act(() => {
-        result.current.toggleChatSideBar(false);
+        result.current.toggleRightPanel(false);
       });
 
-      expect(result.current.status.showChatSideBar).toBe(false);
+      expect(result.current.status.showRightPanel).toBe(false);
     });
   });
 
@@ -266,14 +266,14 @@ describe('createPreferenceSlice', () => {
     it('should switch back to chat', () => {
       const { result } = renderHook(() => useGlobalStore());
       const sessionId = 'session-id';
-      const router = { push: vi.fn() } as any;
+      const navigate = vi.fn();
 
       act(() => {
-        useGlobalStore.setState({ router });
+        useGlobalStore.setState({ navigate });
         result.current.switchBackToChat(sessionId);
       });
 
-      expect(router.push).toHaveBeenCalledWith('/chat?session=session-id');
+      expect(navigate).toHaveBeenCalledWith('/agent/session-id');
     });
   });
 
