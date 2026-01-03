@@ -64,6 +64,20 @@ export const fileRouter = router({
         }
       }
 
+      let actualSize = input.size;
+      try {
+        const { contentLength } = await ctx.fileService.getFileMetadata(input.url);
+        if (contentLength >= 1) {
+          actualSize = contentLength;
+        }
+      } catch {
+        // If metadata fetch fails, use original size from input
+      }
+
+      if (actualSize < 1) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'File size must be at least 1 byte' });
+      }
+
       const { id } = await ctx.fileModel.create(
         {
           fileHash: input.hash,
@@ -72,7 +86,7 @@ export const fileRouter = router({
           metadata: input.metadata,
           name: input.name,
           parentId: resolvedParentId,
-          size: input.size,
+          size: actualSize,
           url: input.url,
         },
         // if the file is not exist in global file, create a new one
